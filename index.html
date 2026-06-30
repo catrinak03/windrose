@@ -3,572 +3,603 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Wind Rose Diagram</title>
+  <title>CoreInfra 風花圖</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    :root {
-      --bg: #F4FAFF;
-      --surface: #ffffff;
-      --border: #dce8f5;
-      --text: #1a2332;
-      --muted: #6b7a8d;
-      --accent: #2563eb;
-      --radius: 7px;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg); color: var(--text);
-      height: 100vh; display: flex; flex-direction: column; overflow: hidden;
-    }
-
-    /* ── Header ── */
-    header {
-      background: var(--surface); border-bottom: 1px solid var(--border);
-      height: 50px; padding: 0 1.25rem;
-      display: flex; align-items: center; gap: .6rem;
-      box-shadow: 0 1px 4px rgba(0,0,0,.06); flex-shrink: 0;
-    }
-    .logo-icon { color: var(--accent); display: flex; }
-    .logo-icon svg { width: 24px; height: 24px; }
-    .brand { font-weight: 700; font-size: .98rem; color: var(--accent); }
-    .subtitle { font-size: .82rem; color: var(--muted); }
-
-    /* ── Layout ── */
-    .app { display: flex; flex: 1; overflow: hidden; }
-
-    /* ── Left panel ── */
-    aside {
-      width: 268px; flex-shrink: 0;
-      background: var(--surface); border-right: 1px solid var(--border);
-      overflow-y: auto; display: flex; flex-direction: column;
-    }
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-    .sec-title {
-      font-size: .7rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .07em; color: var(--muted);
-      padding: .9rem 1rem .4rem;
-    }
-    .divider { border: none; border-top: 1px solid var(--border); }
-
-    /* ── Quick settings ── */
-    .settings-grid {
-      padding: .25rem 1rem .8rem;
-      display: grid; grid-template-columns: 1fr 1fr; gap: .5rem .75rem;
-    }
-    .settings-grid label {
-      font-size: .72rem; color: var(--muted); font-weight: 500;
-      display: block; margin-bottom: 3px;
-    }
-    .settings-grid select,
-    .settings-grid input[type=number] {
-      width: 100%; padding: 5px 7px;
-      border: 1px solid var(--border); border-radius: 6px;
-      font-size: .82rem; background: var(--surface); color: var(--text);
-      outline: none; cursor: pointer;
-    }
-    .settings-grid select:focus,
-    .settings-grid input[type=number]:focus { border-color: var(--accent); }
-
-    /* ── Bins ── */
-    .bins-wrap { padding: .2rem 1rem .5rem; flex: 1; }
-    .btbl { width: 100%; border-collapse: collapse; font-size: .8rem; }
-    .btbl th {
-      font-size: .68rem; color: var(--muted); font-weight: 600;
-      text-align: left; padding: 0 3px 5px;
-    }
-    .btbl td { padding: 2.5px 3px; vertical-align: middle; }
-    .btbl input[type=color] {
-      width: 26px; height: 22px; border: 1px solid var(--border);
-      border-radius: 4px; cursor: pointer; padding: 1px; background: none;
-    }
-    .btbl input[type=text] {
-      width: 74px; padding: 3px 5px;
-      border: 1px solid var(--border); border-radius: 4px;
-      font-size: .77rem; outline: none; background: var(--surface);
-    }
-    .btbl input[type=number] {
-      width: 50px; padding: 3px 5px;
-      border: 1px solid var(--border); border-radius: 4px;
-      font-size: .77rem; outline: none; background: var(--surface);
-    }
-    .btbl input:focus { border-color: var(--accent); }
-    .bin-actions { padding: .2rem 1rem .8rem; display: flex; gap: .4rem; }
-
-    /* ── Import (collapsed) ── */
-    .import-toggle {
-      padding: .55rem 1rem; font-size: .75rem; color: var(--accent);
-      cursor: pointer; display: flex; align-items: center; gap: .3rem;
-      border-top: 1px solid var(--border);
-    }
-    .import-toggle:hover { background: var(--bg); }
-    .import-toggle svg { transition: transform .15s; }
-    .import-toggle.open svg { transform: rotate(90deg); }
-    .import-panel { display: none; padding: .4rem 1rem .9rem; }
-    .import-panel.open { display: block; }
-    .import-panel textarea {
-      width: 100%; height: 88px; padding: .4rem .55rem;
-      border: 1px solid var(--border); border-radius: var(--radius);
-      font-size: .75rem; font-family: monospace; resize: vertical;
-      background: var(--bg); color: var(--text); outline: none;
-    }
-    .import-panel textarea:focus { border-color: var(--accent); }
-    .import-panel textarea::placeholder { font-family: sans-serif; color: var(--muted); font-size: .75rem; }
-    input[type=file] { display: none; }
-    .import-status { font-size: .73rem; color: var(--muted); margin-top: .35rem; min-height: 14px; }
-    .import-status.err { color: #e53e3e; }
-
-    /* ── Buttons ── */
-    .btn {
-      padding: 4px 11px; border-radius: 6px; font-size: .77rem;
-      font-weight: 500; cursor: pointer; border: none; white-space: nowrap;
-      transition: background .12s;
-    }
-    .btn:disabled { opacity: .4; cursor: not-allowed; }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-primary:not(:disabled):hover { background: #1d4ed8; }
-    .btn-outline { background: #fff; color: var(--text); border: 1px solid var(--border); }
-    .btn-outline:hover { background: var(--bg); }
-    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid transparent; }
-    .btn-ghost:hover { background: var(--bg); color: var(--text); }
-    .btn-del { background: transparent; color: #e53e3e; border: none; padding: 2px 6px; font-size: .78rem; border-radius: 4px; cursor: pointer; }
-    .btn-del:hover { background: #fff0f0; }
-    .data-btns { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .45rem; }
-
-    /* ── Main ── */
-    main {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 1.25rem; overflow: hidden; gap: .85rem;
-    }
-    canvas { display: block; border-radius: 6px; box-shadow: 0 2px 14px rgba(0,0,0,.09); }
-    .legend { display: flex; gap: .8rem; flex-wrap: wrap; justify-content: center; }
-    .leg-item { display: flex; align-items: center; gap: 5px; font-size: .75rem; color: var(--muted); }
-    .leg-sw { width: 15px; height: 11px; border-radius: 2px; border: 1px solid rgba(0,0,0,.1); flex-shrink: 0; }
-    .export-bar { display: flex; gap: .5rem; }
+    :root{--bg:#F2F6FA;--surface:#fff;--border:#dce8f0;--text:#1a2332;--muted:#6b7a8d;--accent:#1f4e79;--a2:#2e75b6;--r:8px;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+    header{background:var(--accent);height:56px;padding:0 1.25rem;display:flex;align-items:center;gap:.85rem;box-shadow:0 2px 8px rgba(0,0,0,.25);flex-shrink:0;}
+    header img{height:36px;width:36px;object-fit:contain;border-radius:4px;background:#fff;padding:2px;}
+    .ht{display:flex;flex-direction:column;line-height:1.2;}
+    .hn{font-size:.98rem;font-weight:700;color:#fff;}
+    .hs{font-size:.67rem;color:rgba(255,255,255,.6);letter-spacing:.04em;}
+    .hb{margin-left:auto;background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.3);padding:3px 10px;border-radius:99px;font-size:.67rem;font-weight:500;letter-spacing:.05em;}
+    .app{display:flex;flex:1;overflow:hidden;}
+    aside{width:262px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column;}
+    ::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+    .sec{border-bottom:1px solid var(--border);}
+    .sec-hd{display:flex;align-items:center;justify-content:space-between;padding:.65rem 1rem;cursor:pointer;user-select:none;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+    .sec-hd:hover{background:var(--bg);}
+    .sec-hd svg{transition:transform .2s;}
+    .sec-hd.open svg{transform:rotate(180deg);}
+    .sec-bd{padding:.7rem 1rem .9rem;display:none;}
+    .sec-bd.open{display:block;}
+    .fl{display:block;font-size:.72rem;color:var(--muted);font-weight:500;margin:.6rem 0 .2rem;}
+    .fl:first-child{margin-top:0;}
+    textarea{width:100%;height:100px;padding:.45rem .55rem;border:1px solid var(--border);border-radius:var(--r);font-size:.75rem;font-family:monospace;resize:vertical;background:var(--bg);color:var(--text);outline:none;}
+    textarea:focus{border-color:var(--a2);}
+    textarea::placeholder{font-family:sans-serif;color:var(--muted);font-size:.75rem;}
+    input[type=file]{display:none;}
+    .btns{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem;}
+    .btn{padding:5px 11px;border-radius:6px;font-size:.78rem;font-weight:500;cursor:pointer;border:none;transition:background .12s;white-space:nowrap;}
+    .btn:disabled{opacity:.4;cursor:not-allowed;}
+    .bp{background:var(--a2);color:#fff;}.bp:not(:disabled):hover{background:var(--accent);}
+    .bo{background:#fff;color:var(--text);border:1px solid var(--border);}.bo:hover{background:var(--bg);}
+    .bg{background:transparent;color:var(--muted);border:1px solid transparent;}.bg:hover{background:var(--bg);color:var(--text);}
+    .st{font-size:.73rem;color:var(--muted);margin-top:.4rem;min-height:14px;}.st.err{color:#c0392b;}
+    .mg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;}
+    .mcb{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;}
+    .mcb input{cursor:pointer;accent-color:var(--a2);}
+    .mcb span{font-size:.7rem;color:var(--muted);}
+    .mcb input:checked+span{color:var(--accent);font-weight:600;}
+    .sbs{display:flex;gap:.4rem;margin-top:.5rem;flex-wrap:wrap;}
+    .sb{font-size:.71rem;padding:3px 9px;border:1px solid var(--border);border-radius:5px;cursor:pointer;background:#fff;color:var(--muted);}.sb:hover{background:var(--bg);}
+    .sg{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+    .sc{background:var(--bg);border-radius:6px;padding:.5rem .6rem;}
+    .sc .v{font-size:1.1rem;font-weight:700;color:var(--accent);line-height:1.2;}
+    .sc .l{font-size:.68rem;color:var(--muted);margin-top:1px;}
+    .sc.full{grid-column:1/-1;}
+    /* main layout */
+    main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+    .rose-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:1rem;overflow:hidden;}
+    .rw{display:flex;flex-direction:column;align-items:center;gap:.85rem;}
+    .empty{text-align:center;color:#b0bfcf;padding:2rem;}
+    .empty svg{opacity:.4;}
+    .empty p{margin-top:.7rem;font-size:.9rem;color:var(--muted);}
+    .empty small{font-size:.75rem;color:#b8c8d8;}
+    canvas{display:block;border-radius:6px;box-shadow:0 2px 16px rgba(0,0,0,.1);}
+    .rose-row{display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;justify-content:center;}
+    .canvas-col{display:flex;flex-direction:column;align-items:center;gap:.7rem;}
+    .legend-wrap{text-align:center;}
+    .legend-hd{font-size:.72rem;font-weight:700;color:var(--muted);margin-bottom:.35rem;letter-spacing:.03em;}
+    .legend{display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center;}
+    .li{display:flex;align-items:center;gap:5px;font-size:.76rem;color:var(--muted);}
+    .ls{width:15px;height:11px;border-radius:2px;border:1px solid rgba(0,0,0,.12);flex-shrink:0;}
+    .dir-tbl{border-collapse:collapse;font-size:.75rem;}
+    .dir-tbl th{background:var(--accent);color:#fff;padding:4px 12px;font-size:.7rem;font-weight:600;text-align:center;}
+    .dir-tbl th:first-child{text-align:left;}
+    .dir-tbl td{padding:3px 12px;border-bottom:1px solid var(--border);text-align:right;}
+    .dir-tbl td:first-child{text-align:left;font-weight:500;color:var(--text);}
+    .dir-tbl tr:nth-child(even){background:var(--bg);}
+    .dir-tbl .calm-row{background:#eff6ff!important;}
+    .dir-tbl .calm-row td{font-weight:700;color:var(--accent);}
+    /* frequency grid panel */
+    .gpanel{background:var(--surface);border-bottom:2px solid var(--border);flex-shrink:0;}
+    .gpanel-hd{display:flex;align-items:center;justify-content:space-between;padding:.55rem 1rem;cursor:pointer;user-select:none;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+    .gpanel-hd:hover{background:var(--bg);}
+    .gpanel-hd svg{transition:transform .2s;}
+    .gpanel-hd.open svg{transform:rotate(180deg);}
+    .gpanel-bd{display:none;padding:.6rem 1rem .8rem;}
+    .gpanel-bd.open{display:block;}
+    .gtbar{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.6rem;}
+    .gscroll{overflow-x:auto;max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r);}
+    .gtbl{border-collapse:collapse;font-size:.75rem;min-width:520px;width:100%;}
+    .gtbl th{padding:5px 8px;font-size:.68rem;color:#fff;font-weight:600;text-align:center;position:sticky;top:0;z-index:1;white-space:nowrap;}
+    .gtbl th:first-child{text-align:left;background:var(--accent)!important;}
+    .gtbl th:last-child{background:#4a6080!important;}
+    .gtbl td{padding:2px 4px;border-top:1px solid var(--border);text-align:center;}
+    .gtbl td:first-child{font-size:.73rem;font-weight:700;color:var(--accent);padding:3px 10px;text-align:left;background:#f8fbff;}
+    .gtbl td:last-child{font-size:.73rem;color:var(--muted);font-weight:600;background:#f8fbff;min-width:44px;}
+    .gtbl tr:hover td{background:#f0f6ff;}
+    .gtbl tr:hover td:first-child,.gtbl tr:hover td:last-child{background:#e8f2ff;}
+    .gin{width:58px;padding:3px 4px;border:1px solid var(--border);border-radius:4px;font-size:.75rem;text-align:right;outline:none;background:#fff;}
+    .gin:focus{border-color:var(--a2);background:#eff6ff;}
   </style>
 </head>
 <body>
-
 <header>
-  <div class="logo-icon">
-    <svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.8">
-      <circle cx="13" cy="13" r="11.5"/>
-      <circle cx="13" cy="13" r="7"/>
-      <circle cx="13" cy="13" r="2.5" fill="currentColor" stroke="none"/>
-      <line x1="13" y1="1.5" x2="13" y2="6"/>
-      <line x1="13" y1="20" x2="13" y2="24.5"/>
-      <line x1="1.5" y1="13" x2="6" y2="13"/>
-      <line x1="20" y1="13" x2="24.5" y2="13"/>
-    </svg>
-  </div>
-  <span class="brand">WindRose</span>
-  <span class="subtitle">Wind Rose Diagram</span>
+  <img src="data:image/png;base64,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" alt="CoreInfra">
+  <div class="ht"><span class="hn">CoreInfra 風花圖</span><span class="hs">WIND ROSE DIAGRAM SYSTEM</span></div>
+  <span class="hb">For Internal Purpose</span>
 </header>
-
 <div class="app">
-
-  <!-- ── Left panel ── -->
   <aside>
-
-    <div class="sec-title">設定</div>
-    <div class="settings-grid">
-      <div>
-        <label>扇形數量</label>
-        <select id="n-sectors">
-          <option value="4">4 方向</option>
-          <option value="8">8 方向</option>
-          <option value="12">12 方向</option>
-          <option value="16" selected>16 方向</option>
-          <option value="24">24 方向</option>
-          <option value="36">36 方向</option>
-        </select>
+    <!-- 資料匯入 -->
+    <div class="sec">
+      <div class="sec-hd open" data-t="bd-import">資料匯入
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
       </div>
-      <div>
-        <label>靜風門檻 (m/s)</label>
-        <input type="number" id="calm-val" value="0.5" min="0" max="5" step="0.1">
-      </div>
-      <div>
-        <label>頻率顯示</label>
-        <select id="freq-type">
-          <option value="pct">百分比 (%)</option>
-          <option value="count">次數 (n)</option>
-        </select>
-      </div>
-      <div>
-        <label>欄位 — 風向</label>
-        <select id="dir-col"></select>
-      </div>
-      <div style="grid-column:1/-1">
-        <label>欄位 — 風速 (m/s)</label>
-        <select id="spd-col"></select>
+      <div class="sec-bd open" id="bd-import">
+        <textarea id="paste-area" placeholder="從 Excel 複製貼上氣象署逐時資料&#10;（含「時間：YYYY年MM月DD日」標題行）"></textarea>
+        <div class="btns">
+          <label class="btn bp" for="file-in">上傳檔案</label>
+          <input type="file" id="file-in" accept=".csv,.txt,.tsv,.xlsx,.xls">
+          <button class="btn bo" id="demo-btn">Demo 資料</button>
+        </div>
+        <div class="btns"><button class="btn bg" id="clear-btn" disabled>清除資料</button></div>
+        <div class="st" id="import-status"></div>
       </div>
     </div>
-
-    <hr class="divider">
-
-    <div class="sec-title">風速分級 (Bins)</div>
-    <div class="bins-wrap">
-      <table class="btbl">
-        <thead><tr><th>色</th><th>名稱</th><th>上限</th><th></th></tr></thead>
-        <tbody id="bins-tbody"></tbody>
-      </table>
-    </div>
-    <div class="bin-actions">
-      <button class="btn btn-outline" id="add-bin">+ 新增</button>
-      <button class="btn btn-ghost" id="reset-bins">重設</button>
-    </div>
-
-    <!-- Import (collapsed) -->
-    <div class="import-toggle" id="import-toggle">
-      <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
-        <path d="M6 3l5 5-5 5V3z"/>
-      </svg>
-      匯入資料
-    </div>
-    <div class="import-panel" id="import-panel">
-      <textarea id="paste-area" placeholder="從 Excel 複製後貼上（第一行為標題）"></textarea>
-      <div class="data-btns">
-        <label class="btn btn-primary" for="file-in">上傳 CSV</label>
-        <input type="file" id="file-in" accept=".csv,.txt">
-        <button class="btn btn-ghost" id="export-csv-btn" disabled>匯出</button>
-        <button class="btn btn-ghost" id="clear-btn" disabled>清除</button>
+    <!-- 月份篩選 -->
+    <div class="sec">
+      <div class="sec-hd open" data-t="bd-months">月份篩選
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
       </div>
-      <div class="import-status" id="import-status"></div>
+      <div class="sec-bd open" id="bd-months">
+        <div class="mg" id="month-grid"></div>
+        <div class="sbs">
+          <button class="sb" id="sel-all">全選</button>
+          <button class="sb" id="sel-none">取消全選</button>
+        </div>
+        <div class="sbs">
+          <button class="sb" id="sel-warm">暖季 4–9月</button>
+          <button class="sb" id="sel-cold">冷季 10–3月</button>
+        </div>
+      </div>
     </div>
-
+    <!-- 資料摘要 -->
+    <div class="sec">
+      <div class="sec-hd open" data-t="bd-stats">資料摘要
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+      </div>
+      <div class="sec-bd open" id="bd-stats">
+        <div class="sg" id="stat-grid">
+          <div class="sc full" style="color:var(--muted);font-size:.78rem;text-align:center;background:none">尚未載入資料</div>
+        </div>
+      </div>
+    </div>
   </aside>
-
-  <!-- ── Main ── -->
   <main>
-    <canvas id="rose"></canvas>
-    <div class="legend" id="legend"></div>
-    <div class="export-bar">
-      <button class="btn btn-primary" id="dl-png">下載 PNG</button>
+    <!-- 頻率網格手動輸入 -->
+    <div class="gpanel">
+      <div class="gpanel-hd" id="gpanel-hd">頻率網格手動輸入
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+      </div>
+      <div class="gpanel-bd" id="gpanel-bd">
+        <div class="gtbar">
+          <button class="btn bo" id="grid-clear-btn">清除網格</button>
+          <button class="btn bo" id="grid-demo-btn">填入 Demo</button>
+          <span class="st" id="grid-status" style="margin-top:0"></span>
+        </div>
+        <div class="gscroll">
+          <table class="gtbl" id="gtbl"></table>
+        </div>
+      </div>
+    </div>
+    <!-- 風花圖 -->
+    <div class="rose-wrap">
+      <div class="empty" id="empty-state">
+        <svg width="88" height="88" viewBox="0 0 88 88" fill="none" stroke="#90a8c0" stroke-width="1.5">
+          <circle cx="44" cy="44" r="40"/><circle cx="44" cy="44" r="26"/><circle cx="44" cy="44" r="10"/>
+          <line x1="44" y1="4" x2="44" y2="18"/><line x1="44" y1="70" x2="44" y2="84"/>
+          <line x1="4" y1="44" x2="18" y2="44"/><line x1="70" y1="44" x2="84" y2="44"/>
+          <line x1="15.7" y1="15.7" x2="25" y2="25"/><line x1="63" y1="63" x2="72.3" y2="72.3"/>
+          <line x1="72.3" y1="15.7" x2="63" y2="25"/><line x1="25" y1="63" x2="15.7" y2="72.3"/>
+        </svg>
+        <p>Import data or fill the frequency grid to draw</p>
+        <small>Supports CWB hourly format, CSV, or manual count entry</small>
+      </div>
+      <div class="rose-row" id="rose-row" style="display:none">
+        <div class="canvas-col">
+          <canvas id="rose"></canvas>
+          <div class="legend-wrap" id="legend-wrap">
+            <div class="legend-hd">Wind Speed (m/s)</div>
+            <div class="legend" id="legend"></div>
+          </div>
+          <div id="export-bar">
+            <button class="btn bp" id="dl-btn">Download PNG</button>
+          </div>
+        </div>
+        <div id="dir-table-wrap"></div>
+      </div>
     </div>
   </main>
-
 </div>
-
 <script>
-(() => {
-  const DEFAULT_BANDS = [
-    { color: '#313695', label: '< 2 m/s',  max: 2   },
-    { color: '#4575b4', label: '2–4 m/s',  max: 4   },
-    { color: '#74add1', label: '4–6 m/s',  max: 6   },
-    { color: '#fdae61', label: '6–9 m/s',  max: 9   },
-    { color: '#f46d43', label: '9–12 m/s', max: 12  },
-    { color: '#a50026', label: '> 12 m/s', max: Infinity },
+(()=>{
+  const N=16, CALM=0.5;
+  const BANDS=[
+    {max:1,color:'#d73027',label:'0–1 m/s'},
+    {max:2,color:'#fc8d59',label:'1–2 m/s'},
+    {max:3,color:'#fee090',label:'2–3 m/s'},
+    {max:4,color:'#abd9e9',label:'3–4 m/s'},
+    {max:Infinity,color:'#4575b4',label:'4+ m/s'},
   ];
-  const COMPASS = {N:0,NNE:22.5,NE:45,ENE:67.5,E:90,ESE:112.5,SE:135,SSE:157.5,S:180,SSW:202.5,SW:225,WSW:247.5,W:270,WNW:292.5,NW:315,NNW:337.5};
-  const DLABELS = {
-    4:  ['N','E','S','W'],
-    8:  ['N','NE','E','SE','S','SW','W','NW'],
-    12: ['N','NNE','ENE','E','ESE','SSE','S','SSW','WSW','W','WNW','NNW'],
-    16: ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'],
-    24: Array.from({length:24},(_,i)=>i*15+'°'),
-    36: Array.from({length:36},(_,i)=>i*10+'°'),
-  };
-  const CARDINAL = new Set(['N','E','S','W']);
+  const DLBL=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+  const CARD=new Set(['N','E','S','W']);
+  const MTW=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const COMPASSDEG={N:0,NNE:22.5,NE:45,ENE:67.5,E:90,ESE:112.5,SE:135,SSE:157.5,S:180,SSW:202.5,SW:225,WSW:247.5,W:270,WNW:292.5,NW:315,NNW:337.5};
 
-  let rows = [], headers = [];
-  let bands = DEFAULT_BANDS.map(b=>({...b}));
+  let allRec=[], selM=new Set([1,2,3,4,5,6,7,8,9,10,11,12]);
+  // gridData[dir][band] = count; null means not from grid
+  let gridData=null;
 
-  // ── Parse ──
-  function parseText(text) {
-    const lines = text.trim().split(/\r?\n/).filter(l=>l.trim());
-    if (lines.length < 2) throw new Error('需要至少兩行（標題 + 資料）');
-    const dl = lines[0].includes('\t') ? '\t' : lines[0].includes(';') ? ';' : ',';
-    const split = s => {
-      const f=[]; let c='',q=false;
-      for (const ch of s) {
-        if (ch==='"'){q=!q;continue;}
-        if (ch===dl&&!q){f.push(c.trim());c='';continue;}
-        c+=ch;
+  // ── Frequency grid ─────────────────────────────────────────────
+  function buildGrid(){
+    const tbl=document.getElementById('gtbl');
+    // thead
+    const thCols=BANDS.map((b,i)=>
+      `<th style="background:${BANDS[i].color}">${b.label}</th>`
+    ).join('');
+    tbl.innerHTML=`<thead><tr><th>風向</th>${thCols}<th>合計</th></tr></thead><tbody id="gbody"></tbody>`;
+    renderGridRows();
+  }
+
+  function renderGridRows(){
+    const tbody=document.getElementById('gbody');
+    tbody.innerHTML='';
+    for(let d=0;d<N;d++){
+      const tr=document.createElement('tr');
+      let cells='';
+      for(let s=0;s<BANDS.length;s++){
+        const v=gridData?gridData[d][s]:0;
+        cells+=`<td><input class="gin" type="number" min="0" step="1" value="${v||''}" placeholder="0" data-d="${d}" data-s="${s}"></td>`;
       }
-      return (f.push(c.trim()),f);
-    };
-    const h=split(lines[0]);
-    const r=lines.slice(1).map(l=>{
-      const v=split(l);
-      return Object.fromEntries(h.map((k,i)=>[k,v[i]??'']));
-    });
-    return {headers:h,rows:r};
-  }
-
-  function toDir(v) {
-    const s=String(v??'').trim().toUpperCase();
-    if (s in COMPASS) return COMPASS[s];
-    return parseFloat(s);
-  }
-
-  function autoDetect(h,pats) {
-    for (const p of pats){const m=h.find(x=>new RegExp(p,'i').test(x));if(m)return m;}
-    return h[0];
-  }
-
-  // ── Demo data ──
-  function genDemo() {
-    const randn=()=>{let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
-    const data=[];
-    for(let i=0;i<700;i++){
-      let dir,spd;
-      const r=Math.random();
-      if(r<0.35)      dir=225+randn()*22;
-      else if(r<0.60) dir=45+randn()*22;
-      else            dir=Math.random()*360;
-      spd=Math.abs(randn()*3+4.5);
-      data.push({WD:(((dir%360)+360)%360).toFixed(1),WS:spd.toFixed(2)});
+      const tot=gridData?gridData[d].reduce((a,b)=>a+b,0):0;
+      tr.innerHTML=`<td>${DLBL[d]}</td>${cells}<td class="gtot" id="gtot-${d}">${tot||''}</td>`;
+      tbody.appendChild(tr);
     }
-    return {headers:['WD','WS'],rows:data};
+    tbody.querySelectorAll('.gin').forEach(inp=>{
+      inp.addEventListener('input',onGridInput);
+    });
   }
 
-  // ── Compute bins ──
-  function computeBins() {
-    const dc=document.getElementById('dir-col').value;
-    const sc=document.getElementById('spd-col').value;
-    const ct=parseFloat(document.getElementById('calm-val').value)||0.5;
-    const N=parseInt(document.getElementById('n-sectors').value);
+  function onGridInput(e){
+    const d=+e.target.dataset.d, s=+e.target.dataset.s;
+    const v=Math.max(0,parseInt(e.target.value)||0);
+    if(!gridData)gridData=Array.from({length:N},()=>new Array(BANDS.length).fill(0));
+    gridData[d][s]=v;
+    // update row total
+    const tot=gridData[d].reduce((a,b)=>a+b,0);
+    document.getElementById('gtot-'+d).textContent=tot||'';
+    updateGridStatus();
+    drawRose();
+  }
+
+  function updateGridStatus(){
+    const el=document.getElementById('grid-status');
+    if(!gridData){el.textContent='';return;}
+    const tot=gridData.flat().reduce((a,b)=>a+b,0);
+    el.textContent=tot?`網格合計 ${tot.toLocaleString()} 筆`:'';
+  }
+
+  document.getElementById('gpanel-hd').addEventListener('click',()=>{
+    document.getElementById('gpanel-hd').classList.toggle('open');
+    document.getElementById('gpanel-bd').classList.toggle('open');
+  });
+
+  document.getElementById('grid-clear-btn').addEventListener('click',()=>{
+    gridData=null;
+    renderGridRows();
+    updateGridStatus();
+    if(!allRec.length){
+      document.getElementById('rose-row').style.display='none';
+      document.getElementById('empty-state').style.display='';
+      document.getElementById('stat-grid').innerHTML='<div class="sc full" style="color:var(--muted);font-size:.78rem;text-align:center;background:none">尚未載入資料</div>';
+    }else drawRose();
+  });
+
+  document.getElementById('grid-demo-btn').addEventListener('click',()=>{
+    const rng=()=>Math.floor(Math.random()*20);
+    gridData=Array.from({length:N},()=>BANDS.map(()=>rng()));
+    renderGridRows();
+    updateGridStatus();
+    drawRose();
+  });
+
+  buildGrid();
+
+  // ── Month checkboxes ────────────────────────────────────────────
+  const mgrid=document.getElementById('month-grid');
+  MTW.forEach((m,i)=>{
+    const mo=i+1;
+    const lbl=document.createElement('label');
+    lbl.className='mcb';
+    lbl.innerHTML=`<input type="checkbox" value="${mo}" checked><span>${m}</span>`;
+    lbl.querySelector('input').addEventListener('change',e=>{
+      if(e.target.checked)selM.add(mo);else selM.delete(mo); drawRose();
+    });
+    mgrid.appendChild(lbl);
+  });
+  const cbs=()=>mgrid.querySelectorAll('input[type=checkbox]');
+  document.getElementById('sel-all').onclick=()=>{cbs().forEach(c=>{c.checked=true;selM.add(+c.value);});drawRose();};
+  document.getElementById('sel-none').onclick=()=>{cbs().forEach(c=>{c.checked=false;selM.delete(+c.value);});drawRose();};
+  document.getElementById('sel-warm').onclick=()=>{
+    const w=new Set([4,5,6,7,8,9]);
+    cbs().forEach(c=>{c.checked=w.has(+c.value);if(c.checked)selM.add(+c.value);else selM.delete(+c.value);});drawRose();
+  };
+  document.getElementById('sel-cold').onclick=()=>{
+    const cl=new Set([1,2,3,10,11,12]);
+    cbs().forEach(c=>{c.checked=cl.has(+c.value);if(c.checked)selM.add(+c.value);else selM.delete(+c.value);});drawRose();
+  };
+
+  // ── Collapsible sections ────────────────────────────────────────
+  document.querySelectorAll('.sec-hd').forEach(hd=>{
+    hd.addEventListener('click',()=>{
+      hd.classList.toggle('open');
+      document.getElementById(hd.dataset.t).classList.toggle('open');
+    });
+  });
+
+  // ── CWB parser ──────────────────────────────────────────────────
+  function parseCWB(text){
+    const lines=text.split(/\r?\n/);
+    const rec=[];
+    let cur=null;
+    for(const line of lines){
+      const dm=line.match(/時間[：:]\s*(\d{4})年(\d{1,2})月(\d{1,2})日/);
+      if(dm){cur={year:+dm[1],month:+dm[2],day:+dm[3]};continue;}
+      const f=line.split('\t');
+      const hr=parseInt(f[0]);
+      if(isNaN(hr)||hr<1||hr>24||f.length<6)continue;
+      const pres=parseFloat(f[1]);
+      if(isNaN(pres)||pres<800||pres>1100)continue;
+      const spd=parseFloat(f[4]);
+      const ds=(f[5]||'').replace(/[\s\-&]+$/,'').trim();
+      const dir=parseFloat(ds);
+      if(isNaN(spd))continue;
+      rec.push({...cur,hour:hr,speed:spd,dir:isNaN(dir)?null:dir});
+    }
+    return rec;
+  }
+
+  function parseGeneric(text){
+    const lines=text.trim().split(/\r?\n/).filter(l=>l.trim());
+    if(lines.length<2)return[];
+    const dl=lines[0].includes('\t')?'\t':',';
+    const h=lines[0].split(dl).map(x=>x.trim().toLowerCase());
+    const di=h.findIndex(x=>/dir|wd|wind.?dir|方向|風向/.test(x));
+    const si=h.findIndex(x=>/sp[de]|ws|wind.?sp|速度|風速/.test(x));
+    if(di<0||si<0)return[];
+    return lines.slice(1).map(l=>{
+      const f=l.split(dl);
+      const ds=(f[di]||'').trim().toUpperCase();
+      const dir=ds in COMPASSDEG?COMPASSDEG[ds]:parseFloat(ds);
+      const speed=parseFloat(f[si]);
+      return{year:null,month:null,day:null,hour:null,speed,dir:isNaN(dir)?null:dir};
+    }).filter(r=>!isNaN(r.speed));
+  }
+
+  function ingest(text){
+    let r=parseCWB(text);
+    if(!r.length)r=parseGeneric(text);
+    return r;
+  }
+
+  function loadRec(rec){
+    allRec=rec;
+    const st=document.getElementById('import-status');
+    st.className='st';
+    st.textContent=`共 ${rec.length.toLocaleString()} 筆有效資料`;
+    document.getElementById('clear-btn').disabled=false;
+    drawRose();
+  }
+
+  // ── Compute bins ────────────────────────────────────────────────
+  function computeBins(){
+    // Grid mode: use gridData directly
+    if(gridData){
+      const tot=gridData.flat().reduce((a,b)=>a+b,0);
+      const avg=0, pd=DLBL[gridData.map(r=>r.reduce((a,b)=>a+b,0)).indexOf(Math.max(...gridData.map(r=>r.reduce((a,b)=>a+b,0))))];
+      return{bins:gridData.map(r=>[...r]),calm:0,total:tot,avg,pd};
+    }
+    // Normal mode: bin allRec
+    const filt=allRec.filter(r=>r.month==null||selM.has(r.month));
     const sz=360/N;
-    const bins=Array.from({length:N},()=>new Array(bands.length).fill(0));
-    let calm=0,total=0,skip=0;
-    for(const r of rows){
-      const d=toDir(r[dc]),s=parseFloat(r[sc]);
-      if(isNaN(d)||isNaN(s)){skip++;continue;}
+    const bins=Array.from({length:N},()=>new Array(BANDS.length).fill(0));
+    let calm=0,total=0;
+    for(const r of filt){
+      if(isNaN(r.speed)||r.dir===null)continue;
       total++;
-      if(s<=ct){calm++;continue;}
-      const bi=Math.floor(((d%360+360)%360)/sz)%N;
-      const si=bands.findIndex(b=>s<b.max);
+      if(r.speed<=CALM){calm++;continue;}
+      const bi=Math.floor(((r.dir%360+360)%360)/sz)%N;
+      const si=BANDS.findIndex(b=>r.speed<b.max);
       if(si>=0)bins[bi][si]++;
     }
-    return {bins,calm,total,skip,N};
+    const speeds=filt.filter(r=>!isNaN(r.speed)).map(r=>r.speed);
+    const avg=speeds.length?speeds.reduce((a,b)=>a+b,0)/speeds.length:0;
+    const tots=bins.map(b=>b.reduce((s,c)=>s+c,0));
+    const pd=DLBL[tots.indexOf(Math.max(...tots))];
+    return{bins,calm,total,avg,pd};
   }
 
-  // ── Draw ──
-  function arcSector(ctx,cx,cy,r0,r1,a0,a1,color){
+  function updateStats(calm,total,avg,pd){
+    const el=document.getElementById('stat-grid');
+    if(!total){el.innerHTML='<div class="sc full" style="color:var(--muted);font-size:.78rem;text-align:center;background:none">無符合條件的資料</div>';return;}
+    el.innerHTML=`
+      <div class="sc"><div class="v">${total.toLocaleString()}</div><div class="l">有效筆數</div></div>
+      <div class="sc"><div class="v">${avg?avg.toFixed(2):'—'}</div><div class="l">平均風速 (m/s)</div></div>
+      <div class="sc"><div class="v">${pd}</div><div class="l">最常見風向</div></div>
+      <div class="sc"><div class="v">${total?((calm/total*100).toFixed(1)+'%'):'—'}</div><div class="l">靜風率</div></div>`;
+  }
+
+  function drawArc(ctx,cx,cy,r0,r1,a0,a1,col){
     ctx.beginPath();
     if(r0<0.5){ctx.moveTo(cx,cy);ctx.arc(cx,cy,r1,a0,a1);}
     else{ctx.arc(cx,cy,r1,a0,a1);ctx.arc(cx,cy,r0,a1,a0,true);}
-    ctx.closePath();
-    ctx.fillStyle=color;ctx.fill();
+    ctx.closePath();ctx.fillStyle=col;ctx.fill();
   }
 
-  function drawRose() {
-    if(!rows.length) return;
-    const {bins,calm,total,N}=computeBins();
-    if(total===0) return;
-
+  function drawRose(){
+    if(!allRec.length&&!gridData)return;
+    const{bins,calm,total,avg,pd}=computeBins();
+    updateStats(calm,total,avg,pd);
+    if(!total){
+      document.getElementById('rose-row').style.display='none';
+      document.getElementById('empty-state').style.display='';
+      return;
+    }
     const canvas=document.getElementById('rose');
-    const mainEl=document.querySelector('main');
-    const size=Math.min(mainEl.clientWidth-32,mainEl.clientHeight-120,580);
-    canvas.width=canvas.height=size;
-
-    const ctx=canvas.getContext('2d'),cx=size/2,cy=size/2,R=size/2-52;
-    ctx.clearRect(0,0,size,size);
-    ctx.fillStyle='#fff';ctx.fillRect(0,0,size,size);
-
-    const binTots=bins.map(b=>b.reduce((s,c)=>s+c,0));
-    const maxC=Math.max(...binTots,1);
-    const maxPct=maxC/total*100;
-    const usePct=document.getElementById('freq-type').value==='pct';
-
-    // Grid rings
+    const rw=document.querySelector('.rose-wrap');
+    const sz=Math.min(rw.clientWidth-280,rw.clientHeight-80,480);
+    const dpr=window.devicePixelRatio||1;
+    canvas.width=canvas.height=sz*dpr;
+    canvas.style.width=canvas.style.height=sz+'px';
+    const ctx=canvas.getContext('2d');
+    ctx.scale(dpr,dpr);
+    const cx=sz/2,cy=sz/2,R=sz/2-54;
+    ctx.clearRect(0,0,sz,sz);ctx.fillStyle='#fff';ctx.fillRect(0,0,sz,sz);
+    const tots=bins.map(b=>b.reduce((s,c)=>s+c,0));
+    const maxC=Math.max(...tots,1),maxP=maxC/total*100;
     for(let i=1;i<=4;i++){
       const r=R*i/4;
       ctx.beginPath();ctx.arc(cx,cy,r,0,2*Math.PI);
-      ctx.strokeStyle='#e4eef8';ctx.lineWidth=1;ctx.stroke();
-      const lbl=usePct?(maxPct*i/4).toFixed(1)+'%':Math.round(maxC*i/4).toString();
-      ctx.fillStyle='#9aacbc';ctx.font='9px system-ui';
+      ctx.strokeStyle='#dce8f0';ctx.lineWidth=1;ctx.stroke();
+      ctx.fillStyle='#9aaec0';ctx.font='9px system-ui';
       ctx.textAlign='left';ctx.textBaseline='bottom';
-      ctx.fillText(lbl,cx+3,cy-r-1);
+      ctx.fillText((maxP*i/4).toFixed(1)+'%',cx+3,cy-r-1);
     }
-
-    // Spokes
     for(let b=0;b<N;b++){
       const a=(b*360/N-90)*Math.PI/180;
-      ctx.beginPath();ctx.moveTo(cx,cy);
-      ctx.lineTo(cx+R*Math.cos(a),cy+R*Math.sin(a));
-      ctx.strokeStyle='#e4eef8';ctx.lineWidth=.5;ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+R*Math.cos(a),cy+R*Math.sin(a));
+      ctx.strokeStyle='#dce8f0';ctx.lineWidth=.5;ctx.stroke();
     }
-
-    // Petals
     const gap=Math.PI/N*0.05;
     for(let b=0;b<N;b++){
       const mid=(b*360/N-90)*Math.PI/180;
       const a0=mid-Math.PI/N+gap,a1=mid+Math.PI/N-gap;
       let prev=0;
-      for(let s=0;s<bands.length;s++){
+      for(let s=0;s<BANDS.length;s++){
         const cnt=bins[b][s];
-        if(cnt>0) arcSector(ctx,cx,cy,prev/maxC*R,(prev+cnt)/maxC*R,a0,a1,bands[s].color);
+        if(cnt>0)drawArc(ctx,cx,cy,prev/maxC*R,(prev+cnt)/maxC*R,a0,a1,BANDS[s].color);
         prev+=cnt;
       }
     }
-
-    // Compass labels
-    const lblR=R+20,lbls=DLABELS[N];
+    const lr=R+20;
     for(let b=0;b<N;b++){
-      const a=(b*360/N-90)*Math.PI/180;
-      const lbl=lbls?lbls[b]:(b*360/N)+'°';
+      const a=(b*360/N-90)*Math.PI/180,lbl=DLBL[b];
       ctx.textAlign='center';ctx.textBaseline='middle';
-      const isCard=CARDINAL.has(lbl);
-      ctx.font=(isCard?'bold 13px':'11px')+' system-ui';
-      ctx.fillStyle=isCard?'#1a2332':'#4a5a6a';
-      ctx.fillText(lbl,cx+lblR*Math.cos(a),cy+lblR*Math.sin(a));
+      ctx.fillStyle=CARD.has(lbl)?'#1a2332':'#4a5a6a';
+      ctx.font=(CARD.has(lbl)?'bold 13px':'11px')+' system-ui';
+      ctx.fillText(lbl,cx+lr*Math.cos(a),cy+lr*Math.sin(a));
     }
-
-    // Center calm
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.font='bold 10.5px system-ui';ctx.fillStyle='#4a5a6a';
-    ctx.fillText('靜風',cx,cy-8);
-    ctx.font='10px system-ui';ctx.fillStyle='#9aacbc';
-    ctx.fillText((calm/total*100).toFixed(1)+'%',cx,cy+8);
-
-    // n count
-    ctx.textAlign='right';ctx.textBaseline='top';
-    ctx.font='9.5px system-ui';ctx.fillStyle='#b8c8d8';
-    ctx.fillText('n = '+total.toLocaleString(),size-6,6);
-
+    ctx.font='bold 10px system-ui';ctx.fillStyle='#4a5a6a';ctx.fillText('Calm',cx,cy-8);
+    ctx.font='10px system-ui';ctx.fillStyle='#9aaec0';ctx.fillText((calm/total*100).toFixed(1)+'%',cx,cy+8);
+    ctx.textAlign='right';ctx.textBaseline='top';ctx.font='9px system-ui';ctx.fillStyle='#b8c8d8';
+    ctx.fillText('n = '+total.toLocaleString(),sz-6,6);
+    document.getElementById('empty-state').style.display='none';
+    document.getElementById('rose-row').style.display='';
     buildLegend();
+    buildDirTable(bins,calm,total);
   }
 
-  function buildLegend() {
+  function buildDirTable(bins,calm,total){
+    const rows=DLBL.map((lbl,d)=>{
+      const cnt=bins[d].reduce((a,b)=>a+b,0);
+      return `<tr><td>${lbl}</td><td>${(cnt/total*100).toFixed(1)}%</td></tr>`;
+    }).join('');
+    document.getElementById('dir-table-wrap').innerHTML=`
+      <table class="dir-tbl">
+        <thead>
+          <tr><th>Wind Direction</th><th>Freq.</th></tr>
+        </thead>
+        <tbody>
+          <tr class="calm-row"><td>Calm</td><td>${(calm/total*100).toFixed(1)}%</td></tr>
+          ${rows}
+        </tbody>
+      </table>`;
+  }
+
+  function buildLegend(){
     document.getElementById('legend').innerHTML=
-      [...bands].reverse().map(b=>
-        `<div class="leg-item"><div class="leg-sw" style="background:${b.color}"></div>${b.label}</div>`
-      ).join('')+
-      `<div class="leg-item"><div class="leg-sw" style="background:#dce8f5"></div>靜風</div>`;
+      [...BANDS].reverse().map(b=>`<div class="li"><div class="ls" style="background:${b.color}"></div>${b.label}</div>`).join('')+
+      `<div class="li"><div class="ls" style="background:#e0eaf2;border-color:#ccd8e4"></div>Calm ≤${CALM} m/s</div>`;
   }
 
-  // ── Bins table ──
-  function renderBins() {
-    const tbody=document.getElementById('bins-tbody');
-    tbody.innerHTML='';
-    bands.forEach((b,i)=>{
-      const isLast=i===bands.length-1;
-      const tr=document.createElement('tr');
-      tr.innerHTML=`
-        <td><input type="color" value="${b.color}" data-i="${i}"></td>
-        <td><input type="text" value="${b.label}" data-i="${i}" class="bl"></td>
-        <td>${isLast
-          ?'<span style="color:var(--muted);font-size:.8rem;padding-left:4px">∞</span>'
-          :`<input type="number" value="${b.max}" data-i="${i}" class="bm" min="0" step=".5">`}
-        </td>
-        <td><button class="btn-del" data-i="${i}">✕</button></td>
-      `;
-      tbody.appendChild(tr);
-    });
-    tbody.querySelectorAll('input[type=color]').forEach(el=>
-      el.addEventListener('input',e=>{bands[+e.target.dataset.i].color=e.target.value;drawRose();}));
-    tbody.querySelectorAll('.bl').forEach(el=>
-      el.addEventListener('change',e=>{bands[+e.target.dataset.i].label=e.target.value;buildLegend();}));
-    tbody.querySelectorAll('.bm').forEach(el=>
-      el.addEventListener('change',e=>{bands[+e.target.dataset.i].max=parseFloat(e.target.value)||Infinity;drawRose();}));
-    tbody.querySelectorAll('.btn-del').forEach(el=>
-      el.addEventListener('click',e=>{
-        if(bands.length>1){bands.splice(+e.target.dataset.i,1);renderBins();drawRose();}
-      }));
-  }
-
-  // ── Load data ──
-  function updateColSelectors() {
-    const ds=document.getElementById('dir-col'),ss=document.getElementById('spd-col');
-    [ds,ss].forEach(s=>{s.innerHTML=headers.map(h=>`<option>${h}</option>`).join('');});
-    ds.value=autoDetect(headers,['dir','wd','wind.?dir','direction','方向','風向','wdir']);
-    const sg=autoDetect(headers,['spd','ws','wind.?sp','speed','速度','風速','wsp']);
-    ss.value=sg!==ds.value?sg:(headers.find(h=>h!==ds.value)||headers[0]);
-  }
-
-  function loadData(parsed,silent=false) {
-    rows=parsed.rows;headers=parsed.headers;
-    updateColSelectors();
-    document.getElementById('export-csv-btn').disabled=false;
-    document.getElementById('clear-btn').disabled=false;
-    if(!silent){
-      document.getElementById('import-status').className='import-status';
-      document.getElementById('import-status').textContent=`${rows.length.toLocaleString()} 筆，${headers.length} 欄`;
-    }
-    drawRose();
-  }
-
-  // ── Events ──
-
-  document.getElementById('import-toggle').addEventListener('click',()=>{
-    document.getElementById('import-toggle').classList.toggle('open');
-    document.getElementById('import-panel').classList.toggle('open');
-  });
-
-  const pasteEl=document.getElementById('paste-area');
-  pasteEl.addEventListener('paste',()=>{
+  // ── Import events ───────────────────────────────────────────────
+  const pa=document.getElementById('paste-area');
+  pa.addEventListener('paste',()=>{
     setTimeout(()=>{
-      try{loadData(parseText(pasteEl.value));}
-      catch(e){
-        document.getElementById('import-status').textContent=e.message;
-        document.getElementById('import-status').className='import-status err';
-      }
+      const v=pa.value.trim();if(!v)return;
+      const r=ingest(v);
+      if(!r.length){document.getElementById('import-status').textContent='無法辨識格式';document.getElementById('import-status').className='st err';return;}
+      loadRec(r);
     },10);
   });
 
   document.getElementById('file-in').addEventListener('change',e=>{
     const f=e.target.files[0];if(!f)return;
-    const r=new FileReader();
-    r.onload=ev=>{
-      try{loadData(parseText(ev.target.result));}
-      catch(er){
-        document.getElementById('import-status').textContent=er.message;
-        document.getElementById('import-status').className='import-status err';
+    const isXL=/\.(xlsx|xls)$/i.test(f.name);
+    const rd=new FileReader();
+    rd.onload=ev=>{
+      let r;
+      if(isXL){
+        const wb=XLSX.read(ev.target.result,{type:'array'});
+        r=parseXLSX(wb);
+      }else{
+        r=ingest(ev.target.result);
       }
+      if(!r.length){document.getElementById('import-status').textContent='無法辨識格式';document.getElementById('import-status').className='st err';return;}
+      loadRec(r);
     };
-    r.readAsText(f,'UTF-8');
+    if(isXL)rd.readAsArrayBuffer(f);else rd.readAsText(f,'UTF-8');
   });
 
-  document.getElementById('export-csv-btn').addEventListener('click',()=>{
-    if(!rows.length)return;
-    const csv=[headers.join(','),...rows.map(r=>headers.map(h=>r[h]??'').join(','))].join('\n');
-    const a=document.createElement('a');
-    a.download='windrose_data.csv';a.href='data:text/csv,'+encodeURIComponent(csv);a.click();
+  function parseXLSX(wb){
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+    // Find first row with non-empty values (header row)
+    let hRow=-1;
+    for(let i=0;i<aoa.length;i++){
+      if(aoa[i].some(c=>c!=null&&String(c).trim()!=='')){hRow=i;break;}
+    }
+    if(hRow<0)return[];
+    const headers=aoa[hRow].map(c=>String(c||'').trim().toLowerCase());
+    const di=headers.findIndex(x=>/dir|wd|wind.?dir|方向|風向/.test(x));
+    const si=headers.findIndex(x=>/sp[de]|ws|wind.?sp|速度|風速/.test(x));
+    if(di<0||si<0)return[];
+    const recs=[];
+    for(let i=hRow+1;i<aoa.length;i++){
+      const row=aoa[i];
+      const speed=parseFloat(row[si]);
+      const dir=parseFloat(row[di]);
+      if(!isNaN(speed))recs.push({year:null,month:null,day:null,hour:null,speed,dir:isNaN(dir)?null:dir});
+    }
+    return recs;
+  }
+
+  document.getElementById('demo-btn').addEventListener('click',()=>{
+    const rng=Math.random,randn=()=>{let u=0,v=0;while(!u)u=rng();while(!v)v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+    const rec=[];
+    for(let yr=2020;yr<=2022;yr++){
+      for(let mo=1;mo<=12;mo++){
+        const days=new Date(yr,mo,0).getDate();
+        for(let dy=1;dy<=days;dy++){
+          for(let hr=1;hr<=24;hr++){
+            let dir,spd;
+            if(mo>=10||mo<=3){dir=45+randn()*25;spd=Math.abs(randn()*2.5+4);}
+            else if(mo>=6&&mo<=9){dir=225+randn()*30;spd=Math.abs(randn()*1.5+2.5);}
+            else{dir=rng()*360;spd=Math.abs(randn()*2+2);}
+            rec.push({year:yr,month:mo,day:dy,hour:hr,speed:+spd.toFixed(2),dir:+((dir%360+360)%360).toFixed(1)});
+          }
+        }
+      }
+    }
+    loadRec(rec);
+    document.getElementById('import-status').textContent=`Demo：${rec.length.toLocaleString()} 筆（2020–2022 模擬）`;
   });
 
   document.getElementById('clear-btn').addEventListener('click',()=>{
-    rows=[];headers=[];pasteEl.value='';
+    allRec=[];pa.value='';
     document.getElementById('import-status').textContent='';
-    document.getElementById('export-csv-btn').disabled=true;
     document.getElementById('clear-btn').disabled=true;
-    document.getElementById('dir-col').innerHTML='';
-    document.getElementById('spd-col').innerHTML='';
-    const cv=document.getElementById('rose');
-    cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
-    document.getElementById('legend').innerHTML='';
+    if(!gridData){
+      document.getElementById('rose-row').style.display='none';
+      document.getElementById('empty-state').style.display='';
+      document.getElementById('stat-grid').innerHTML='<div class="sc full" style="color:var(--muted);font-size:.78rem;text-align:center;background:none">尚未載入資料</div>';
+    }else drawRose();
   });
 
-  document.getElementById('add-bin').addEventListener('click',()=>{
-    const prevMax=bands.length>=2?bands[bands.length-2].max:0;
-    bands.splice(bands.length-1,0,{color:'#888888',label:`${prevMax}–? m/s`,max:bands[bands.length-1].max});
-    renderBins();drawRose();
-  });
-
-  document.getElementById('reset-bins').addEventListener('click',()=>{
-    bands=DEFAULT_BANDS.map(b=>({...b}));renderBins();drawRose();
-  });
-
-  ['n-sectors','freq-type','calm-val','dir-col','spd-col'].forEach(id=>{
-    document.getElementById(id)?.addEventListener('change',drawRose);
-  });
-
-  document.getElementById('dl-png').addEventListener('click',()=>{
+  document.getElementById('dl-btn').addEventListener('click',()=>{
     const a=document.createElement('a');
-    a.download='windrose.png';
+    a.download='coreinfra_windrose.png';
     a.href=document.getElementById('rose').toDataURL('image/png');
     a.click();
   });
 
-  window.addEventListener('resize',()=>{if(rows.length)drawRose();});
-
-  // ── Init: demo data on load ──
-  renderBins();
-  const demo=genDemo();
-  pasteEl.value=[demo.headers.join('\t'),...demo.rows.map(r=>demo.headers.map(h=>r[h]).join('\t'))].join('\n');
-  loadData(demo,true);
+  window.addEventListener('resize',()=>{if(allRec.length||gridData)drawRose();});
 })();
 </script>
 </body>
