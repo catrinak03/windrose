@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wind Rose Diagram</title>
+  <style>
+    :root {
+      --bg: #F4FAFF;
+      --surface: #ffffff;
+      --border: #dce8f5;
+      --text: #1a2332;
+      --muted: #6b7a8d;
+      --accent: #2563eb;
+      --radius: 7px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg); color: var(--text);
+      height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      height: 50px; padding: 0 1.25rem;
+      display: flex; align-items: center; gap: .6rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06); flex-shrink: 0;
+    }
+    .logo-icon { color: var(--accent); display: flex; }
+    .logo-icon svg { width: 24px; height: 24px; }
+    .brand { font-weight: 700; font-size: .98rem; color: var(--accent); }
+    .subtitle { font-size: .82rem; color: var(--muted); }
+
+    /* ── Layout ── */
+    .app { display: flex; flex: 1; overflow: hidden; }
+
+    /* ── Left panel ── */
+    aside {
+      width: 268px; flex-shrink: 0;
+      background: var(--surface); border-right: 1px solid var(--border);
+      overflow-y: auto; display: flex; flex-direction: column;
+    }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .sec-title {
+      font-size: .7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--muted);
+      padding: .9rem 1rem .4rem;
+    }
+    .divider { border: none; border-top: 1px solid var(--border); }
+
+    /* ── Quick settings ── */
+    .settings-grid {
+      padding: .25rem 1rem .8rem;
+      display: grid; grid-template-columns: 1fr 1fr; gap: .5rem .75rem;
+    }
+    .settings-grid label {
+      font-size: .72rem; color: var(--muted); font-weight: 500;
+      display: block; margin-bottom: 3px;
+    }
+    .settings-grid select,
+    .settings-grid input[type=number] {
+      width: 100%; padding: 5px 7px;
+      border: 1px solid var(--border); border-radius: 6px;
+      font-size: .82rem; background: var(--surface); color: var(--text);
+      outline: none; cursor: pointer;
+    }
+    .settings-grid select:focus,
+    .settings-grid input[type=number]:focus { border-color: var(--accent); }
+
+    /* ── Bins ── */
+    .bins-wrap { padding: .2rem 1rem .5rem; flex: 1; }
+    .btbl { width: 100%; border-collapse: collapse; font-size: .8rem; }
+    .btbl th {
+      font-size: .68rem; color: var(--muted); font-weight: 600;
+      text-align: left; padding: 0 3px 5px;
+    }
+    .btbl td { padding: 2.5px 3px; vertical-align: middle; }
+    .btbl input[type=color] {
+      width: 26px; height: 22px; border: 1px solid var(--border);
+      border-radius: 4px; cursor: pointer; padding: 1px; background: none;
+    }
+    .btbl input[type=text] {
+      width: 74px; padding: 3px 5px;
+      border: 1px solid var(--border); border-radius: 4px;
+      font-size: .77rem; outline: none; background: var(--surface);
+    }
+    .btbl input[type=number] {
+      width: 50px; padding: 3px 5px;
+      border: 1px solid var(--border); border-radius: 4px;
+      font-size: .77rem; outline: none; background: var(--surface);
+    }
+    .btbl input:focus { border-color: var(--accent); }
+    .bin-actions { padding: .2rem 1rem .8rem; display: flex; gap: .4rem; }
+
+    /* ── Import (collapsed) ── */
+    .import-toggle {
+      padding: .55rem 1rem; font-size: .75rem; color: var(--accent);
+      cursor: pointer; display: flex; align-items: center; gap: .3rem;
+      border-top: 1px solid var(--border);
+    }
+    .import-toggle:hover { background: var(--bg); }
+    .import-toggle svg { transition: transform .15s; }
+    .import-toggle.open svg { transform: rotate(90deg); }
+    .import-panel { display: none; padding: .4rem 1rem .9rem; }
+    .import-panel.open { display: block; }
+    .import-panel textarea {
+      width: 100%; height: 88px; padding: .4rem .55rem;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      font-size: .75rem; font-family: monospace; resize: vertical;
+      background: var(--bg); color: var(--text); outline: none;
+    }
+    .import-panel textarea:focus { border-color: var(--accent); }
+    .import-panel textarea::placeholder { font-family: sans-serif; color: var(--muted); font-size: .75rem; }
+    input[type=file] { display: none; }
+    .import-status { font-size: .73rem; color: var(--muted); margin-top: .35rem; min-height: 14px; }
+    .import-status.err { color: #e53e3e; }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 4px 11px; border-radius: 6px; font-size: .77rem;
+      font-weight: 500; cursor: pointer; border: none; white-space: nowrap;
+      transition: background .12s;
+    }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:not(:disabled):hover { background: #1d4ed8; }
+    .btn-outline { background: #fff; color: var(--text); border: 1px solid var(--border); }
+    .btn-outline:hover { background: var(--bg); }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid transparent; }
+    .btn-ghost:hover { background: var(--bg); color: var(--text); }
+    .btn-del { background: transparent; color: #e53e3e; border: none; padding: 2px 6px; font-size: .78rem; border-radius: 4px; cursor: pointer; }
+    .btn-del:hover { background: #fff0f0; }
+    .data-btns { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .45rem; }
+
+    /* ── Main ── */
+    main {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 1.25rem; overflow: hidden; gap: .85rem;
+    }
+    canvas { display: block; border-radius: 6px; box-shadow: 0 2px 14px rgba(0,0,0,.09); }
+    .legend { display: flex; gap: .8rem; flex-wrap: wrap; justify-content: center; }
+    .leg-item { display: flex; align-items: center; gap: 5px; font-size: .75rem; color: var(--muted); }
+    .leg-sw { width: 15px; height: 11px; border-radius: 2px; border: 1px solid rgba(0,0,0,.1); flex-shrink: 0; }
+    .export-bar { display: flex; gap: .5rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">
+    <svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.8">
+      <circle cx="13" cy="13" r="11.5"/>
+      <circle cx="13" cy="13" r="7"/>
+      <circle cx="13" cy="13" r="2.5" fill="currentColor" stroke="none"/>
+      <line x1="13" y1="1.5" x2="13" y2="6"/>
+      <line x1="13" y1="20" x2="13" y2="24.5"/>
+      <line x1="1.5" y1="13" x2="6" y2="13"/>
+      <line x1="20" y1="13" x2="24.5" y2="13"/>
+    </svg>
+  </div>
+  <span class="brand">WindRose</span>
+  <span class="subtitle">Wind Rose Diagram</span>
+</header>
+
+<div class="app">
+
+  <!-- ── Left panel ── -->
+  <aside>
+
+    <div class="sec-title">設定</div>
+    <div class="settings-grid">
+      <div>
+        <label>扇形數量</label>
+        <select id="n-sectors">
+          <option value="4">4 方向</option>
+          <option value="8">8 方向</option>
+          <option value="12">12 方向</option>
+          <option value="16" selected>16 方向</option>
+          <option value="24">24 方向</option>
+          <option value="36">36 方向</option>
+        </select>
+      </div>
+      <div>
+        <label>靜風門檻 (m/s)</label>
+        <input type="number" id="calm-val" value="0.5" min="0" max="5" step="0.1">
+      </div>
+      <div>
+        <label>頻率顯示</label>
+        <select id="freq-type">
+          <option value="pct">百分比 (%)</option>
+          <option value="count">次數 (n)</option>
+        </select>
+      </div>
+      <div>
+        <label>欄位 — 風向</label>
+        <select id="dir-col"></select>
+      </div>
+      <div style="grid-column:1/-1">
+        <label>欄位 — 風速 (m/s)</label>
+        <select id="spd-col"></select>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="sec-title">風速分級 (Bins)</div>
+    <div class="bins-wrap">
+      <table class="btbl">
+        <thead><tr><th>色</th><th>名稱</th><th>上限</th><th></th></tr></thead>
+        <tbody id="bins-tbody"></tbody>
+      </table>
+    </div>
+    <div class="bin-actions">
+      <button class="btn btn-outline" id="add-bin">+ 新增</button>
+      <button class="btn btn-ghost" id="reset-bins">重設</button>
+    </div>
+
+    <!-- Import (collapsed) -->
+    <div class="import-toggle" id="import-toggle">
+      <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
+        <path d="M6 3l5 5-5 5V3z"/>
+      </svg>
+      匯入資料
+    </div>
+    <div class="import-panel" id="import-panel">
+      <textarea id="paste-area" placeholder="從 Excel 複製後貼上（第一行為標題）"></textarea>
+      <div class="data-btns">
+        <label class="btn btn-primary" for="file-in">上傳 CSV</label>
+        <input type="file" id="file-in" accept=".csv,.txt">
+        <button class="btn btn-ghost" id="export-csv-btn" disabled>匯出</button>
+        <button class="btn btn-ghost" id="clear-btn" disabled>清除</button>
+      </div>
+      <div class="import-status" id="import-status"></div>
+    </div>
+
+  </aside>
+
+  <!-- ── Main ── -->
+  <main>
+    <canvas id="rose"></canvas>
+    <div class="legend" id="legend"></div>
+    <div class="export-bar">
+      <button class="btn btn-primary" id="dl-png">下載 PNG</button>
+    </div>
+  </main>
+
+</div>
+
+<script>
+(() => {
+  const DEFAULT_BANDS = [
+    { color: '#313695', label: '< 2 m/s',  max: 2   },
+    { color: '#4575b4', label: '2–4 m/s',  max: 4   },
+    { color: '#74add1', label: '4–6 m/s',  max: 6   },
+    { color: '#fdae61', label: '6–9 m/s',  max: 9   },
+    { color: '#f46d43', label: '9–12 m/s', max: 12  },
+    { color: '#a50026', label: '> 12 m/s', max: Infinity },
+  ];
+  const COMPASS = {N:0,NNE:22.5,NE:45,ENE:67.5,E:90,ESE:112.5,SE:135,SSE:157.5,S:180,SSW:202.5,SW:225,WSW:247.5,W:270,WNW:292.5,NW:315,NNW:337.5};
+  const DLABELS = {
+    4:  ['N','E','S','W'],
+    8:  ['N','NE','E','SE','S','SW','W','NW'],
+    12: ['N','NNE','ENE','E','ESE','SSE','S','SSW','WSW','W','WNW','NNW'],
+    16: ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'],
+    24: Array.from({length:24},(_,i)=>i*15+'°'),
+    36: Array.from({length:36},(_,i)=>i*10+'°'),
+  };
+  const CARDINAL = new Set(['N','E','S','W']);
+
+  let rows = [], headers = [];
+  let bands = DEFAULT_BANDS.map(b=>({...b}));
+
+  // ── Parse ──
+  function parseText(text) {
+    const lines = text.trim().split(/\r?\n/).filter(l=>l.trim());
+    if (lines.length < 2) throw new Error('需要至少兩行（標題 + 資料）');
+    const dl = lines[0].includes('\t') ? '\t' : lines[0].includes(';') ? ';' : ',';
+    const split = s => {
+      const f=[]; let c='',q=false;
+      for (const ch of s) {
+        if (ch==='"'){q=!q;continue;}
+        if (ch===dl&&!q){f.push(c.trim());c='';continue;}
+        c+=ch;
+      }
+      return (f.push(c.trim()),f);
+    };
+    const h=split(lines[0]);
+    const r=lines.slice(1).map(l=>{
+      const v=split(l);
+      return Object.fromEntries(h.map((k,i)=>[k,v[i]??'']));
+    });
+    return {headers:h,rows:r};
+  }
+
+  function toDir(v) {
+    const s=String(v??'').trim().toUpperCase();
+    if (s in COMPASS) return COMPASS[s];
+    return parseFloat(s);
+  }
+
+  function autoDetect(h,pats) {
+    for (const p of pats){const m=h.find(x=>new RegExp(p,'i').test(x));if(m)return m;}
+    return h[0];
+  }
+
+  // ── Demo data ──
+  function genDemo() {
+    const randn=()=>{let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+    const data=[];
+    for(let i=0;i<700;i++){
+      let dir,spd;
+      const r=Math.random();
+      if(r<0.35)      dir=225+randn()*22;
+      else if(r<0.60) dir=45+randn()*22;
+      else            dir=Math.random()*360;
+      spd=Math.abs(randn()*3+4.5);
+      data.push({WD:(((dir%360)+360)%360).toFixed(1),WS:spd.toFixed(2)});
+    }
+    return {headers:['WD','WS'],rows:data};
+  }
+
+  // ── Compute bins ──
+  function computeBins() {
+    const dc=document.getElementById('dir-col').value;
+    const sc=document.getElementById('spd-col').value;
+    const ct=parseFloat(document.getElementById('calm-val').value)||0.5;
+    const N=parseInt(document.getElementById('n-sectors').value);
+    const sz=360/N;
+    const bins=Array.from({length:N},()=>new Array(bands.length).fill(0));
+    let calm=0,total=0,skip=0;
+    for(const r of rows){
+      const d=toDir(r[dc]),s=parseFloat(r[sc]);
+      if(isNaN(d)||isNaN(s)){skip++;continue;}
+      total++;
+      if(s<=ct){calm++;continue;}
+      const bi=Math.floor(((d%360+360)%360)/sz)%N;
+      const si=bands.findIndex(b=>s<b.max);
+      if(si>=0)bins[bi][si]++;
+    }
+    return {bins,calm,total,skip,N};
+  }
+
+  // ── Draw ──
+  function arcSector(ctx,cx,cy,r0,r1,a0,a1,color){
+    ctx.beginPath();
+    if(r0<0.5){ctx.moveTo(cx,cy);ctx.arc(cx,cy,r1,a0,a1);}
+    else{ctx.arc(cx,cy,r1,a0,a1);ctx.arc(cx,cy,r0,a1,a0,true);}
+    ctx.closePath();
+    ctx.fillStyle=color;ctx.fill();
+  }
+
+  function drawRose() {
+    if(!rows.length) return;
+    const {bins,calm,total,N}=computeBins();
+    if(total===0) return;
+
+    const canvas=document.getElementById('rose');
+    const mainEl=document.querySelector('main');
+    const size=Math.min(mainEl.clientWidth-32,mainEl.clientHeight-120,580);
+    canvas.width=canvas.height=size;
+
+    const ctx=canvas.getContext('2d'),cx=size/2,cy=size/2,R=size/2-52;
+    ctx.clearRect(0,0,size,size);
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,size,size);
+
+    const binTots=bins.map(b=>b.reduce((s,c)=>s+c,0));
+    const maxC=Math.max(...binTots,1);
+    const maxPct=maxC/total*100;
+    const usePct=document.getElementById('freq-type').value==='pct';
+
+    // Grid rings
+    for(let i=1;i<=4;i++){
+      const r=R*i/4;
+      ctx.beginPath();ctx.arc(cx,cy,r,0,2*Math.PI);
+      ctx.strokeStyle='#e4eef8';ctx.lineWidth=1;ctx.stroke();
+      const lbl=usePct?(maxPct*i/4).toFixed(1)+'%':Math.round(maxC*i/4).toString();
+      ctx.fillStyle='#9aacbc';ctx.font='9px system-ui';
+      ctx.textAlign='left';ctx.textBaseline='bottom';
+      ctx.fillText(lbl,cx+3,cy-r-1);
+    }
+
+    // Spokes
+    for(let b=0;b<N;b++){
+      const a=(b*360/N-90)*Math.PI/180;
+      ctx.beginPath();ctx.moveTo(cx,cy);
+      ctx.lineTo(cx+R*Math.cos(a),cy+R*Math.sin(a));
+      ctx.strokeStyle='#e4eef8';ctx.lineWidth=.5;ctx.stroke();
+    }
+
+    // Petals
+    const gap=Math.PI/N*0.05;
+    for(let b=0;b<N;b++){
+      const mid=(b*360/N-90)*Math.PI/180;
+      const a0=mid-Math.PI/N+gap,a1=mid+Math.PI/N-gap;
+      let prev=0;
+      for(let s=0;s<bands.length;s++){
+        const cnt=bins[b][s];
+        if(cnt>0) arcSector(ctx,cx,cy,prev/maxC*R,(prev+cnt)/maxC*R,a0,a1,bands[s].color);
+        prev+=cnt;
+      }
+    }
+
+    // Compass labels
+    const lblR=R+20,lbls=DLABELS[N];
+    for(let b=0;b<N;b++){
+      const a=(b*360/N-90)*Math.PI/180;
+      const lbl=lbls?lbls[b]:(b*360/N)+'°';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      const isCard=CARDINAL.has(lbl);
+      ctx.font=(isCard?'bold 13px':'11px')+' system-ui';
+      ctx.fillStyle=isCard?'#1a2332':'#4a5a6a';
+      ctx.fillText(lbl,cx+lblR*Math.cos(a),cy+lblR*Math.sin(a));
+    }
+
+    // Center calm
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.font='bold 10.5px system-ui';ctx.fillStyle='#4a5a6a';
+    ctx.fillText('靜風',cx,cy-8);
+    ctx.font='10px system-ui';ctx.fillStyle='#9aacbc';
+    ctx.fillText((calm/total*100).toFixed(1)+'%',cx,cy+8);
+
+    // n count
+    ctx.textAlign='right';ctx.textBaseline='top';
+    ctx.font='9.5px system-ui';ctx.fillStyle='#b8c8d8';
+    ctx.fillText('n = '+total.toLocaleString(),size-6,6);
+
+    buildLegend();
+  }
+
+  function buildLegend() {
+    document.getElementById('legend').innerHTML=
+      [...bands].reverse().map(b=>
+        `<div class="leg-item"><div class="leg-sw" style="background:${b.color}"></div>${b.label}</div>`
+      ).join('')+
+      `<div class="leg-item"><div class="leg-sw" style="background:#dce8f5"></div>靜風</div>`;
+  }
+
+  // ── Bins table ──
+  function renderBins() {
+    const tbody=document.getElementById('bins-tbody');
+    tbody.innerHTML='';
+    bands.forEach((b,i)=>{
+      const isLast=i===bands.length-1;
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td><input type="color" value="${b.color}" data-i="${i}"></td>
+        <td><input type="text" value="${b.label}" data-i="${i}" class="bl"></td>
+        <td>${isLast
+          ?'<span style="color:var(--muted);font-size:.8rem;padding-left:4px">∞</span>'
+          :`<input type="number" value="${b.max}" data-i="${i}" class="bm" min="0" step=".5">`}
+        </td>
+        <td><button class="btn-del" data-i="${i}">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+    tbody.querySelectorAll('input[type=color]').forEach(el=>
+      el.addEventListener('input',e=>{bands[+e.target.dataset.i].color=e.target.value;drawRose();}));
+    tbody.querySelectorAll('.bl').forEach(el=>
+      el.addEventListener('change',e=>{bands[+e.target.dataset.i].label=e.target.value;buildLegend();}));
+    tbody.querySelectorAll('.bm').forEach(el=>
+      el.addEventListener('change',e=>{bands[+e.target.dataset.i].max=parseFloat(e.target.value)||Infinity;drawRose();}));
+    tbody.querySelectorAll('.btn-del').forEach(el=>
+      el.addEventListener('click',e=>{
+        if(bands.length>1){bands.splice(+e.target.dataset.i,1);renderBins();drawRose();}
+      }));
+  }
+
+  // ── Load data ──
+  function updateColSelectors() {
+    const ds=document.getElementById('dir-col'),ss=document.getElementById('spd-col');
+    [ds,ss].forEach(s=>{s.innerHTML=headers.map(h=>`<option>${h}</option>`).join('');});
+    ds.value=autoDetect(headers,['dir','wd','wind.?dir','direction','方向','風向','wdir']);
+    const sg=autoDetect(headers,['spd','ws','wind.?sp','speed','速度','風速','wsp']);
+    ss.value=sg!==ds.value?sg:(headers.find(h=>h!==ds.value)||headers[0]);
+  }
+
+  function loadData(parsed,silent=false) {
+    rows=parsed.rows;headers=parsed.headers;
+    updateColSelectors();
+    document.getElementById('export-csv-btn').disabled=false;
+    document.getElementById('clear-btn').disabled=false;
+    if(!silent){
+      document.getElementById('import-status').className='import-status';
+      document.getElementById('import-status').textContent=`${rows.length.toLocaleString()} 筆，${headers.length} 欄`;
+    }
+    drawRose();
+  }
+
+  // ── Events ──
+
+  document.getElementById('import-toggle').addEventListener('click',()=>{
+    document.getElementById('import-toggle').classList.toggle('open');
+    document.getElementById('import-panel').classList.toggle('open');
+  });
+
+  const pasteEl=document.getElementById('paste-area');
+  pasteEl.addEventListener('paste',()=>{
+    setTimeout(()=>{
+      try{loadData(parseText(pasteEl.value));}
+      catch(e){
+        document.getElementById('import-status').textContent=e.message;
+        document.getElementById('import-status').className='import-status err';
+      }
+    },10);
+  });
+
+  document.getElementById('file-in').addEventListener('change',e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try{loadData(parseText(ev.target.result));}
+      catch(er){
+        document.getElementById('import-status').textContent=er.message;
+        document.getElementById('import-status').className='import-status err';
+      }
+    };
+    r.readAsText(f,'UTF-8');
+  });
+
+  document.getElementById('export-csv-btn').addEventListener('click',()=>{
+    if(!rows.length)return;
+    const csv=[headers.join(','),...rows.map(r=>headers.map(h=>r[h]??'').join(','))].join('\n');
+    const a=document.createElement('a');
+    a.download='windrose_data.csv';a.href='data:text/csv,'+encodeURIComponent(csv);a.click();
+  });
+
+  document.getElementById('clear-btn').addEventListener('click',()=>{
+    rows=[];headers=[];pasteEl.value='';
+    document.getElementById('import-status').textContent='';
+    document.getElementById('export-csv-btn').disabled=true;
+    document.getElementById('clear-btn').disabled=true;
+    document.getElementById('dir-col').innerHTML='';
+    document.getElementById('spd-col').innerHTML='';
+    const cv=document.getElementById('rose');
+    cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
+    document.getElementById('legend').innerHTML='';
+  });
+
+  document.getElementById('add-bin').addEventListener('click',()=>{
+    const prevMax=bands.length>=2?bands[bands.length-2].max:0;
+    bands.splice(bands.length-1,0,{color:'#888888',label:`${prevMax}–? m/s`,max:bands[bands.length-1].max});
+    renderBins();drawRose();
+  });
+
+  document.getElementById('reset-bins').addEventListener('click',()=>{
+    bands=DEFAULT_BANDS.map(b=>({...b}));renderBins();drawRose();
+  });
+
+  ['n-sectors','freq-type','calm-val','dir-col','spd-col'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('change',drawRose);
+  });
+
+  document.getElementById('dl-png').addEventListener('click',()=>{
+    const a=document.createElement('a');
+    a.download='windrose.png';
+    a.href=document.getElementById('rose').toDataURL('image/png');
+    a.click();
+  });
+
+  window.addEventListener('resize',()=>{if(rows.length)drawRose();});
+
+  // ── Init: demo data on load ──
+  renderBins();
+  const demo=genDemo();
+  pasteEl.value=[demo.headers.join('\t'),...demo.rows.map(r=>demo.headers.map(h=>r[h]).join('\t'))].join('\n');
+  loadData(demo,true);
+})();
+</script>
+</body>
+</html>
