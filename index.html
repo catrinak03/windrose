@@ -85,7 +85,7 @@
     .gtbar{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.6rem;}
     .gscroll{overflow-x:auto;max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r);}
     .gtbl{border-collapse:collapse;font-size:.75rem;min-width:520px;width:100%;}
-    .gtbl th{padding:5px 8px;font-size:.68rem;color:#fff;font-weight:600;text-align:center;position:sticky;top:0;z-index:1;white-space:nowrap;}
+    .gtbl th{padding:5px 8px;font-size:.68rem;color:#fff;font-weight:600;text-align:center;position:sticky;top:0;z-index:1;white-space:nowrap;background:var(--accent);}
     .gtbl th:first-child{text-align:left;background:var(--accent)!important;}
     .gtbl th:last-child{background:#4a6080!important;}
     .gtbl td{padding:2px 4px;border-top:1px solid var(--border);text-align:center;}
@@ -95,6 +95,15 @@
     .gtbl tr:hover td:first-child,.gtbl tr:hover td:last-child{background:#e8f2ff;}
     .gin{width:58px;padding:3px 4px;border:1px solid var(--border);border-radius:4px;font-size:.75rem;text-align:right;outline:none;background:#fff;}
     .gin:focus{border-color:var(--a2);background:#eff6ff;}
+    .gtbl td.dname{cursor:pointer;}
+    .gtbl th.band-th{cursor:pointer;}
+    .gtbl td.calm-cell{background:#fbe2e2;text-align:center;vertical-align:middle;}
+    .gtbl tfoot td{border-top:2px solid var(--border);font-weight:700;background:#f8fbff;}
+    .gtbl tfoot .total-row td:first-child{text-align:left;}
+    .gtbl tfoot .grand-row td{text-align:right;font-size:.72rem;font-weight:500;color:var(--muted);background:#fff;border-top:none;}
+    .gtbl .gtot.ok{color:#1e7e34;}
+    .gtbl .gtot.warn{color:#c0392b;}
+    .st.ok{color:#1e7e34;}
   </style>
 </head>
 <body>
@@ -119,6 +128,18 @@
         </div>
         <div class="btns"><button class="btn bg" id="clear-btn" disabled>清除資料</button></div>
         <div class="st" id="import-status"></div>
+      </div>
+    </div>
+    <!-- 靜風設定 -->
+    <div class="sec">
+      <div class="sec-hd open" data-t="bd-offset">Calm Threshold
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+      </div>
+      <div class="sec-bd open" id="bd-offset">
+        <label class="fl" for="calm-in">Calm threshold (m/s)</label>
+        <input type="number" id="calm-in" value="0" step="0.1" min="0"
+          style="width:80px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:.8rem;outline:none;">
+        <div class="st" style="margin-top:.3rem;color:var(--muted)">Speed ≤ threshold = calm</div>
       </div>
     </div>
     <!-- 月份篩選 -->
@@ -153,10 +174,10 @@
   <main>
     <!-- 頻率網格手動輸入 -->
     <div class="gpanel">
-      <div class="gpanel-hd" id="gpanel-hd">頻率網格手動輸入
+      <div class="gpanel-hd open" id="gpanel-hd">頻率網格手動輸入
         <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
       </div>
-      <div class="gpanel-bd" id="gpanel-bd">
+      <div class="gpanel-bd open" id="gpanel-bd">
         <div class="gtbar">
           <button class="btn bo" id="grid-clear-btn">清除網格</button>
           <button class="btn bo" id="grid-demo-btn">填入 Demo</button>
@@ -198,32 +219,93 @@
 </div>
 <script>
 (()=>{
-  const N=16, CALM=0.5;
+  const N=16; let CALM=0;
   const BANDS=[
-    {max:1,color:'#d73027',label:'0–1 m/s'},
-    {max:2,color:'#fc8d59',label:'1–2 m/s'},
-    {max:3,color:'#fee090',label:'2–3 m/s'},
-    {max:4,color:'#abd9e9',label:'3–4 m/s'},
-    {max:Infinity,color:'#4575b4',label:'4+ m/s'},
+    {max:1,color:'#d73027'},
+    {max:2,color:'#fc8d59'},
+    {max:3,color:'#fee090'},
+    {max:4,color:'#abd9e9'},
+    {max:Infinity,color:'#4575b4'},
   ];
+  const bandLabel=i=>{
+    const lo=i===0?0:BANDS[i-1].max;
+    return BANDS[i].max===Infinity?`${lo}+ m/s`:`${lo}–${BANDS[i].max} m/s`;
+  };
+  // round a value up to a "nice" number (1/2/4/5/10 × 10^n) with ~15% headroom, so ring labels read cleanly
+  function niceMax(v){
+    if(v<=0)return 10;
+    const target=v*1.15;
+    const base=Math.pow(10,Math.floor(Math.log10(target)));
+    const n=target/base;
+    const step=n<=1?1:n<=2?2:n<=4?4:n<=5?5:10;
+    return step*base;
+  }
   const DLBL=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
-  const CARD=new Set(['N','E','S','W']);
   const MTW=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
   const COMPASSDEG={N:0,NNE:22.5,NE:45,ENE:67.5,E:90,ESE:112.5,SE:135,SSE:157.5,S:180,SSW:202.5,SW:225,WSW:247.5,W:270,WNW:292.5,NW:315,NNW:337.5};
 
   let allRec=[], selM=new Set([1,2,3,4,5,6,7,8,9,10,11,12]);
-  // gridData[dir][band] = count; null means not from grid
-  let gridData=null;
+  // gridData[dir][band] = percent (0-100); null means not from grid
+  let gridData=null, gridCalm=0;
 
   // ── Frequency grid ─────────────────────────────────────────────
+  // generic dblclick-to-edit for a table cell
+  function makeEditable(el,getVal,setVal,opts={}){
+    el.addEventListener('dblclick',()=>{
+      if(el.querySelector('input'))return;
+      const cur=getVal();
+      const inp=document.createElement('input');
+      inp.type=opts.number?'number':'text';
+      if(opts.step!=null)inp.step=opts.step;
+      if(opts.min!=null)inp.min=opts.min;
+      if(opts.max!=null)inp.max=opts.max;
+      inp.value=cur;
+      inp.style.cssText='width:100%;min-width:44px;padding:1px 3px;font:inherit;border:1px solid var(--a2);border-radius:3px;box-sizing:border-box;';
+      el.textContent='';
+      el.appendChild(inp);
+      inp.focus();inp.select();
+      let done=false;
+      const commit=cancel=>{
+        if(done)return; done=true;
+        let v=cancel?cur:inp.value.trim();
+        if(opts.number){
+          v=parseFloat(v);if(isNaN(v))v=cur;
+          if(opts.min!=null)v=Math.max(opts.min,v);
+          if(opts.max!=null)v=Math.min(opts.max,v);
+        }else if(!v)v=cur;
+        setVal(v);
+      };
+      inp.addEventListener('blur',()=>commit(false));
+      inp.addEventListener('keydown',e=>{
+        if(e.key==='Enter')inp.blur();
+        else if(e.key==='Escape')commit(true);
+      });
+    });
+  }
+
   function buildGrid(){
     const tbl=document.getElementById('gtbl');
-    // thead
     const thCols=BANDS.map((b,i)=>
-      `<th style="background:${BANDS[i].color}">${b.label}</th>`
+      `<th class="band-th" data-band="${i}" style="background:${b.color}" title="雙擊編輯上限值">${bandLabel(i)}</th>`
     ).join('');
-    tbl.innerHTML=`<thead><tr><th>風向</th>${thCols}<th>合計</th></tr></thead><tbody id="gbody"></tbody>`;
+    tbl.innerHTML=`<thead><tr><th>Wind Direction</th><th>Calm</th>${thCols}<th>Total%</th></tr></thead>`+
+      `<tbody id="gbody"></tbody>`+
+      `<tfoot id="gfoot">`+
+        `<tr class="total-row"><td>Total</td><td id="fcalm"></td>${BANDS.map((_,s)=>`<td id="fband-${s}"></td>`).join('')}<td class="gtot" id="fbandtotal"></td></tr>`+
+        `<tr class="grand-row"><td colspan="${2+BANDS.length}">Band Total + Calm =</td><td class="gtot" id="fgrand"></td></tr>`+
+      `</tfoot>`;
     renderGridRows();
+    document.getElementById('calm-pct-in').addEventListener('input',onCalmInput);
+    document.querySelectorAll('.band-th').forEach(th=>{
+      const i=+th.dataset.band;
+      if(BANDS[i].max===Infinity)return;
+      makeEditable(th,()=>BANDS[i].max,v=>{
+        if(v>0)BANDS[i].max=v;
+        buildGrid();
+        drawRose();
+      },{number:true,step:0.1,min:0.1});
+    });
+    updateGridFoot();
   }
 
   function renderGridRows(){
@@ -234,34 +316,70 @@
       let cells='';
       for(let s=0;s<BANDS.length;s++){
         const v=gridData?gridData[d][s]:0;
-        cells+=`<td><input class="gin" type="number" min="0" step="1" value="${v||''}" placeholder="0" data-d="${d}" data-s="${s}"></td>`;
+        cells+=`<td><input class="gin" type="number" min="0" max="100" step="0.01" value="${v?v.toFixed(2):''}" placeholder="0.00" data-d="${d}" data-s="${s}"></td>`;
       }
       const tot=gridData?gridData[d].reduce((a,b)=>a+b,0):0;
-      tr.innerHTML=`<td>${DLBL[d]}</td>${cells}<td class="gtot" id="gtot-${d}">${tot||''}</td>`;
+      const calmCell=d===0?`<td class="calm-cell" rowspan="${N}"><input class="gin" id="calm-pct-in" type="number" min="0" max="100" step="0.01" value="${gridCalm?gridCalm.toFixed(2):''}" placeholder="0.00"></td>`:'';
+      tr.innerHTML=`<td class="dname" data-d="${d}" title="雙擊編輯">${DLBL[d]}</td>`+
+        calmCell+
+        cells+
+        `<td class="gtot" id="gtot-${d}">${tot?tot.toFixed(2):''}</td>`;
       tbody.appendChild(tr);
     }
     tbody.querySelectorAll('.gin').forEach(inp=>{
-      inp.addEventListener('input',onGridInput);
+      if(inp.id!=='calm-pct-in')inp.addEventListener('input',onGridInput);
+    });
+    tbody.querySelectorAll('.dname').forEach(td=>{
+      const d=+td.dataset.d;
+      makeEditable(td,()=>DLBL[d],v=>{DLBL[d]=String(v);td.textContent=DLBL[d];drawRose();});
     });
   }
 
   function onGridInput(e){
     const d=+e.target.dataset.d, s=+e.target.dataset.s;
-    const v=Math.max(0,parseInt(e.target.value)||0);
+    let v=parseFloat(e.target.value);
+    if(isNaN(v))v=0;
+    v=Math.min(100,Math.max(0,v));
     if(!gridData)gridData=Array.from({length:N},()=>new Array(BANDS.length).fill(0));
     gridData[d][s]=v;
-    // update row total
     const tot=gridData[d].reduce((a,b)=>a+b,0);
-    document.getElementById('gtot-'+d).textContent=tot||'';
+    document.getElementById('gtot-'+d).textContent=tot?tot.toFixed(2):'';
+    updateGridFoot();
     updateGridStatus();
     drawRose();
   }
 
+  function onCalmInput(e){
+    let v=parseFloat(e.target.value);
+    if(isNaN(v))v=0;
+    v=Math.min(100,Math.max(0,v));
+    gridCalm=v;
+    updateGridFoot();
+    updateGridStatus();
+    drawRose();
+  }
+
+  // updates the computed (non-input) cells in tfoot without touching the calm input's live value
+  function updateGridFoot(){
+    const bandSums=Array.from({length:BANDS.length},(_,s)=>gridData?gridData.reduce((a,r)=>a+r[s],0):0);
+    const bandTotal=bandSums.reduce((a,b)=>a+b,0);
+    const grand=bandTotal+(gridCalm||0);
+    bandSums.forEach((v,s)=>{document.getElementById('fband-'+s).textContent=v?v.toFixed(2):'';});
+    const ft=document.getElementById('fbandtotal');
+    ft.textContent=bandTotal?bandTotal.toFixed(2):'';
+    const g=document.getElementById('fgrand');
+    g.textContent=grand.toFixed(2)+(Math.abs(grand-100)<0.005?' ✓':'');
+    g.classList.remove('ok','warn');
+    if(Math.abs(grand-100)<0.005)g.classList.add('ok');
+    else if(grand>100)g.classList.add('warn');
+  }
+
   function updateGridStatus(){
     const el=document.getElementById('grid-status');
-    if(!gridData){el.textContent='';return;}
-    const tot=gridData.flat().reduce((a,b)=>a+b,0);
-    el.textContent=tot?`網格合計 ${tot.toLocaleString()} 筆`:'';
+    if(!gridData){el.textContent='';el.className='st';return;}
+    const grand=gridData.flat().reduce((a,b)=>a+b,0)+(gridCalm||0);
+    el.textContent=`目前總和 ${grand.toFixed(2)}%`;
+    el.className='st'+(Math.abs(grand-100)<0.005?' ok':grand>100?' err':'');
   }
 
   document.getElementById('gpanel-hd').addEventListener('click',()=>{
@@ -270,8 +388,10 @@
   });
 
   document.getElementById('grid-clear-btn').addEventListener('click',()=>{
-    gridData=null;
+    gridData=null;gridCalm=0;
     renderGridRows();
+    document.getElementById('calm-pct-in').addEventListener('input',onCalmInput);
+    updateGridFoot();
     updateGridStatus();
     if(!allRec.length){
       document.getElementById('rose-row').style.display='none';
@@ -281,9 +401,17 @@
   });
 
   document.getElementById('grid-demo-btn').addEventListener('click',()=>{
-    const rng=()=>Math.floor(Math.random()*20);
-    gridData=Array.from({length:N},()=>BANDS.map(()=>rng()));
+    // random weights normalized to sum exactly 100.00% (bins + calm) for a clean demo
+    const cells=N*BANDS.length+1;
+    const w=Array.from({length:cells},()=>Math.random());
+    const sum=w.reduce((a,b)=>a+b,0);
+    const pct=w.map(x=>+(x/sum*100).toFixed(2));
+    pct[pct.length-1]=+(pct[pct.length-1]+(100-pct.reduce((a,b)=>a+b,0))).toFixed(2);
+    gridData=Array.from({length:N},(_,d)=>BANDS.map((_,s)=>pct[d*BANDS.length+s]));
+    gridCalm=pct[cells-1];
     renderGridRows();
+    document.getElementById('calm-pct-in').addEventListener('input',onCalmInput);
+    updateGridFoot();
     updateGridStatus();
     drawRose();
   });
@@ -321,6 +449,8 @@
       document.getElementById(hd.dataset.t).classList.toggle('open');
     });
   });
+
+  document.getElementById('calm-in').addEventListener('input',e=>{CALM=parseFloat(e.target.value)||0;drawRose();});
 
   // ── CWB parser ──────────────────────────────────────────────────
   function parseCWB(text){
@@ -380,9 +510,11 @@
   function computeBins(){
     // Grid mode: use gridData directly
     if(gridData){
-      const tot=gridData.flat().reduce((a,b)=>a+b,0);
-      const avg=0, pd=DLBL[gridData.map(r=>r.reduce((a,b)=>a+b,0)).indexOf(Math.max(...gridData.map(r=>r.reduce((a,b)=>a+b,0))))];
-      return{bins:gridData.map(r=>[...r]),calm:0,total:tot,avg,pd};
+      const tots=gridData.map(r=>r.reduce((a,b)=>a+b,0));
+      const calm=gridCalm||0;
+      const total=tots.reduce((a,b)=>a+b,0)+calm;
+      const pd=DLBL[tots.indexOf(Math.max(...tots))];
+      return{bins:gridData.map(r=>[...r]),calm,total,avg:0,pd};
     }
     // Normal mode: bin allRec
     const filt=allRec.filter(r=>r.month==null||selM.has(r.month));
@@ -393,7 +525,7 @@
       if(isNaN(r.speed)||r.dir===null)continue;
       total++;
       if(r.speed<=CALM){calm++;continue;}
-      const bi=Math.floor(((r.dir%360+360)%360)/sz)%N;
+      const bi=Math.floor(((r.dir+360+sz/2)%360)/sz)%N;
       const si=BANDS.findIndex(b=>r.speed<b.max);
       if(si>=0)bins[bi][si]++;
     }
@@ -408,7 +540,7 @@
     const el=document.getElementById('stat-grid');
     if(!total){el.innerHTML='<div class="sc full" style="color:var(--muted);font-size:.78rem;text-align:center;background:none">無符合條件的資料</div>';return;}
     el.innerHTML=`
-      <div class="sc"><div class="v">${total.toLocaleString()}</div><div class="l">有效筆數</div></div>
+      <div class="sc"><div class="v">${gridData?total.toFixed(2)+'%':total.toLocaleString()}</div><div class="l">${gridData?'網格總和':'有效筆數'}</div></div>
       <div class="sc"><div class="v">${avg?avg.toFixed(2):'—'}</div><div class="l">平均風速 (m/s)</div></div>
       <div class="sc"><div class="v">${pd}</div><div class="l">最常見風向</div></div>
       <div class="sc"><div class="v">${total?((calm/total*100).toFixed(1)+'%'):'—'}</div><div class="l">靜風率</div></div>`;
@@ -441,7 +573,9 @@
     const cx=sz/2,cy=sz/2,R=sz/2-54;
     ctx.clearRect(0,0,sz,sz);ctx.fillStyle='#fff';ctx.fillRect(0,0,sz,sz);
     const tots=bins.map(b=>b.reduce((s,c)=>s+c,0));
-    const maxC=Math.max(...tots,1),maxP=maxC/total*100;
+    const rawMaxPct=gridData?Math.max(...tots,0):Math.max(...tots,0)/total*100;
+    const maxP=niceMax(rawMaxPct);
+    const maxC=gridData?maxP:maxP/100*total;
     for(let i=1;i<=4;i++){
       const r=R*i/4;
       ctx.beginPath();ctx.arc(cx,cy,r,0,2*Math.PI);
@@ -468,17 +602,17 @@
     }
     const lr=R+20;
     for(let b=0;b<N;b++){
-      const a=(b*360/N-90)*Math.PI/180,lbl=DLBL[b];
+      const a=(b*360/N-90)*Math.PI/180,lbl=DLBL[b],card=b%4===0;
       ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillStyle=CARD.has(lbl)?'#1a2332':'#4a5a6a';
-      ctx.font=(CARD.has(lbl)?'bold 13px':'11px')+' system-ui';
+      ctx.fillStyle=card?'#1a2332':'#4a5a6a';
+      ctx.font=(card?'bold 13px':'11px')+' system-ui';
       ctx.fillText(lbl,cx+lr*Math.cos(a),cy+lr*Math.sin(a));
     }
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.font='bold 10px system-ui';ctx.fillStyle='#4a5a6a';ctx.fillText('Calm',cx,cy-8);
     ctx.font='10px system-ui';ctx.fillStyle='#9aaec0';ctx.fillText((calm/total*100).toFixed(1)+'%',cx,cy+8);
     ctx.textAlign='right';ctx.textBaseline='top';ctx.font='9px system-ui';ctx.fillStyle='#b8c8d8';
-    ctx.fillText('n = '+total.toLocaleString(),sz-6,6);
+    ctx.fillText(gridData?('total = '+total.toFixed(2)+'%'):('n = '+total.toLocaleString()),sz-6,6);
     document.getElementById('empty-state').style.display='none';
     document.getElementById('rose-row').style.display='';
     buildLegend();
@@ -504,8 +638,9 @@
 
   function buildLegend(){
     document.getElementById('legend').innerHTML=
-      [...BANDS].reverse().map(b=>`<div class="li"><div class="ls" style="background:${b.color}"></div>${b.label}</div>`).join('')+
-      `<div class="li"><div class="ls" style="background:#e0eaf2;border-color:#ccd8e4"></div>Calm ≤${CALM} m/s</div>`;
+      BANDS.map((b,i)=>i).reverse().map(i=>`<div class="li"><div class="ls" style="background:${BANDS[i].color}"></div>${bandLabel(i)}</div>`).join('')+
+      (gridData?`<div class="li"><div class="ls" style="background:#e0eaf2;border-color:#ccd8e4"></div>Calm (manual %)</div>`
+        :`<div class="li"><div class="ls" style="background:#e0eaf2;border-color:#ccd8e4"></div>Calm ≤${CALM} m/s</div>`);
   }
 
   // ── Import events ───────────────────────────────────────────────
@@ -538,24 +673,51 @@
   });
 
   function parseXLSX(wb){
-    const ws=wb.Sheets[wb.SheetNames[0]];
-    const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
-    // Find first row with non-empty values (header row)
-    let hRow=-1;
-    for(let i=0;i<aoa.length;i++){
-      if(aoa[i].some(c=>c!=null&&String(c).trim()!=='')){hRow=i;break;}
-    }
-    if(hRow<0)return[];
-    const headers=aoa[hRow].map(c=>String(c||'').trim().toLowerCase());
-    const di=headers.findIndex(x=>/dir|wd|wind.?dir|方向|風向/.test(x));
-    const si=headers.findIndex(x=>/sp[de]|ws|wind.?sp|速度|風速/.test(x));
-    if(di<0||si<0)return[];
     const recs=[];
-    for(let i=hRow+1;i<aoa.length;i++){
-      const row=aoa[i];
-      const speed=parseFloat(row[si]);
-      const dir=parseFloat(row[di]);
-      if(!isNaN(speed))recs.push({year:null,month:null,day:null,hour:null,speed,dir:isNaN(dir)?null:dir});
+    for(const sheetName of wb.SheetNames){
+      const ws=wb.Sheets[sheetName];
+      const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+      if(!aoa.length)continue;
+
+      // Find header row (first row with matching WD/WS columns)
+      let hRow=-1,di=-1,si=-1;
+      for(let i=0;i<Math.min(30,aoa.length);i++){
+        const h=aoa[i].map(c=>String(c||'').trim().toLowerCase());
+        const d=h.findIndex(x=>/dir|wd|wind.?dir|wind direction|方向|風向/.test(x));
+        const s=h.findIndex(x=>/sp[de]|ws|wind.?sp|wind speed|速度|風速/.test(x));
+        if(d>=0&&s>=0){hRow=i;di=d;si=s;break;}
+      }
+      if(hRow<0)continue;
+
+      // Detect CWB Excel format: look for 時間: pattern in rows below header
+      let isCWB=false;
+      for(let i=hRow+1;i<Math.min(hRow+50,aoa.length);i++){
+        if(String(aoa[i][0]||'').match(/時間[：:]/)){isCWB=true;break;}
+      }
+
+      if(isCWB){
+        let cur={year:null,month:null,day:null};
+        for(let i=1;i<aoa.length;i++){
+          const row=aoa[i];
+          const cellA=String(row[0]||'').trim();
+          const dm=cellA.match(/時間[：:]\s*(\d{4})年(\d{1,2})月(\d{1,2})日/);
+          if(dm){cur={year:+dm[1],month:+dm[2],day:+dm[3]};continue;}
+          const hr=parseInt(row[0]);
+          if(isNaN(hr)||hr<1||hr>24)continue;
+          const speed=parseFloat(row[si]);
+          const dv=row[di];
+          const dir=typeof dv==='number'?dv:parseFloat(String(dv||'').replace(/[^\d.]/g,''));
+          if(!isNaN(speed))recs.push({...cur,hour:hr,speed,dir:isNaN(dir)?null:dir});
+        }
+      }else{
+        for(let i=hRow+1;i<aoa.length;i++){
+          const row=aoa[i];
+          const speed=parseFloat(row[si]);
+          const dv=row[di];
+          const dir=typeof dv==='number'?dv:parseFloat(String(dv||'').replace(/[^\d.]/g,''));
+          if(!isNaN(speed))recs.push({year:null,month:null,day:null,hour:null,speed,dir:isNaN(dir)?null:dir});
+        }
+      }
     }
     return recs;
   }
