@@ -709,6 +709,10 @@
 
   // Paints one wind rose into a given canvas. bins are percentages when gridData is active,
   // raw counts otherwise (matches the original single-rose behaviour, now shared by 1–2 roses).
+  // A blank "Calm" disc of radius R0 sits at the centre and every direction's stack starts at
+  // R0 (not 0) — at true centre a polar wedge's width collapses to a point no matter how big
+  // its value is, so small bands were invisible; starting from R0 guarantees a visible minimum
+  // width for every band, and gives Calm a real circle instead of overlapping text.
   function paintRoseCanvas(canvas,bins,calm,total,sizeBudget){
     const dpr=window.devicePixelRatio||1,sz=Math.max(160,sizeBudget);
     canvas.width=canvas.height=sz*dpr;
@@ -716,6 +720,7 @@
     const ctx=canvas.getContext('2d');
     ctx.scale(dpr,dpr);
     const cx=sz/2,cy=sz/2,R=sz/2-54;
+    const R0=Math.max(26,R*0.16);
     ctx.clearRect(0,0,sz,sz);ctx.fillStyle='#fff';ctx.fillRect(0,0,sz,sz);
     if(!total){
       ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='12px system-ui';ctx.fillStyle='#b0bfcf';
@@ -727,7 +732,7 @@
     const maxP=niceMax(rawMaxPct);
     const maxC=gridData?maxP:maxP/100*total;
     for(let i=1;i<=4;i++){
-      const r=R*i/4;
+      const r=R0+(R-R0)*i/4;
       ctx.beginPath();ctx.arc(cx,cy,r,0,2*Math.PI);
       ctx.strokeStyle='#dce8f0';ctx.lineWidth=1;ctx.stroke();
       ctx.fillStyle='#9aaec0';ctx.font='9px system-ui';
@@ -736,7 +741,7 @@
     }
     for(let b=0;b<N;b++){
       const a=(b*360/N-90)*Math.PI/180;
-      ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+R*Math.cos(a),cy+R*Math.sin(a));
+      ctx.beginPath();ctx.moveTo(cx+R0*Math.cos(a),cy+R0*Math.sin(a));ctx.lineTo(cx+R*Math.cos(a),cy+R*Math.sin(a));
       ctx.strokeStyle='#dce8f0';ctx.lineWidth=.5;ctx.stroke();
     }
     const gap=Math.PI/N*0.05;
@@ -746,7 +751,7 @@
       let prev=0;
       for(let s=0;s<BANDS.length;s++){
         const cnt=bins[b][s];
-        if(cnt>0)drawArc(ctx,cx,cy,prev/maxC*R,(prev+cnt)/maxC*R,a0,a1,BANDS[s].color);
+        if(cnt>0)drawArc(ctx,cx,cy,R0+prev/maxC*(R-R0),R0+(prev+cnt)/maxC*(R-R0),a0,a1,BANDS[s].color);
         prev+=cnt;
       }
     }
@@ -758,9 +763,12 @@
       ctx.font=(card?'bold 13px':'11px')+' system-ui';
       ctx.fillText(lbl,cx+lr*Math.cos(a),cy+lr*Math.sin(a));
     }
+    // blank white Calm disc, drawn last so it sits cleanly over the spokes/wedge tips that meet it
+    ctx.beginPath();ctx.arc(cx,cy,R0,0,2*Math.PI);ctx.fillStyle='#fff';ctx.fill();
+    ctx.lineWidth=1;ctx.strokeStyle='#dce8f0';ctx.stroke();
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.font='bold 10px system-ui';ctx.fillStyle='#4a5a6a';ctx.fillText('Calm',cx,cy-8);
-    ctx.font='10px system-ui';ctx.fillStyle='#9aaec0';ctx.fillText((calm/total*100).toFixed(1)+'%',cx,cy+8);
+    ctx.font='bold 10px system-ui';ctx.fillStyle='#4a5a6a';ctx.fillText('Calm',cx,cy-7);
+    ctx.font='10px system-ui';ctx.fillStyle='#9aaec0';ctx.fillText((calm/total*100).toFixed(1)+'%',cx,cy+7);
     ctx.textAlign='right';ctx.textBaseline='top';ctx.font='9px system-ui';ctx.fillStyle='#b8c8d8';
     ctx.fillText(gridData?('total = '+total.toFixed(2)+'%'):('n = '+total.toLocaleString()),sz-6,6);
   }
