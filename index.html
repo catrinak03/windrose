@@ -50,7 +50,6 @@
     .sc .v{font-size:1.1rem;font-weight:700;color:var(--accent);line-height:1.2;}
     .sc .l{font-size:.68rem;color:var(--muted);margin-top:1px;}
     .sc.full{grid-column:1/-1;}
-    /* main layout */
     main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
     .rose-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:1rem;overflow:hidden;}
     .rw{display:flex;flex-direction:column;align-items:center;gap:.85rem;}
@@ -74,7 +73,6 @@
     .dir-tbl tr:nth-child(even){background:var(--bg);}
     .dir-tbl .calm-row{background:#eff6ff!important;}
     .dir-tbl .calm-row td{font-weight:700;color:var(--accent);}
-    /* frequency grid panel */
     .gpanel{background:var(--surface);border-bottom:2px solid var(--border);flex-shrink:0;}
     .gpanel-hd{display:flex;align-items:center;justify-content:space-between;padding:.55rem 1rem;cursor:pointer;user-select:none;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
     .gpanel-hd:hover{background:var(--bg);}
@@ -104,7 +102,6 @@
     .gtbl .gtot.ok{color:#1e7e34;}
     .gtbl .gtot.warn{color:#c0392b;}
     .st.ok{color:#1e7e34;}
-    /* REV04 additions */
     .rg{display:flex;gap:.9rem;margin-top:.2rem;}
     .rgi{display:flex;align-items:center;gap:4px;font-size:.76rem;color:var(--text);cursor:pointer;}
     .rgi input{cursor:pointer;accent-color:var(--a2);}
@@ -132,13 +129,11 @@
 </head>
 <body>
 <header>
-  <img src="data:image/png;base64,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" alt="CoreInfra">
   <div class="ht"><span class="hn">CoreInfra 風花圖</span><span class="hs">WIND ROSE DIAGRAM SYSTEM</span></div>
   <span class="hb">For Internal Purpose</span>
 </header>
 <div class="app">
   <aside>
-    <!-- 資料匯入 -->
     <div class="sec">
       <div class="sec-hd open" data-t="bd-import">資料匯入
         <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
@@ -154,7 +149,6 @@
         <div class="st" id="import-status"></div>
       </div>
     </div>
-    <!-- 靜風設定 -->
     <div class="sec">
       <div class="sec-hd open" data-t="bd-offset">Calm Threshold
         <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
@@ -166,7 +160,6 @@
         <div class="st" style="margin-top:.3rem;color:var(--muted)">Speed ≤ threshold = calm</div>
       </div>
     </div>
-    <!-- REV04 情境設定 -->
     <div class="sec">
       <div class="sec-hd open" data-t="bd-rev04">REV04 情境設定
         <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
@@ -191,7 +184,6 @@
         <div class="thr-out" id="thr-out">門檻 = <b>35.0℃</b>（取兩者較低）</div>
       </div>
     </div>
-    <!-- 月份篩選 -->
     <div class="sec">
       <div class="sec-hd open" data-t="bd-months">月份篩選
         <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
@@ -208,7 +200,6 @@
         </div>
       </div>
     </div>
-    <!-- 資料摘要 -->
     <div class="sec">
       <div class="sec-hd open" data-t="bd-stats">資料摘要
         <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
@@ -221,7 +212,6 @@
     </div>
   </aside>
   <main>
-    <!-- 頻率網格手動輸入 -->
     <div class="gpanel">
       <div class="gpanel-hd open" id="gpanel-hd">頻率網格手動輸入
         <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
@@ -237,7 +227,6 @@
         </div>
       </div>
     </div>
-    <!-- CFD 情境對照表 (Table-2, REV04) -->
     <div class="gpanel" id="epanel" style="display:none">
       <div class="gpanel-hd open" id="epanel-hd">CFD 情境對照表（Table-2 · REV04）
         <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
@@ -248,7 +237,6 @@
         </div>
       </div>
     </div>
-    <!-- 風花圖 -->
     <div class="rose-wrap" id="rose-wrap">
       <div class="empty" id="empty-state">
         <svg width="88" height="88" viewBox="0 0 88 88" fill="none" stroke="#90a8c0" stroke-width="1.5">
@@ -261,7 +249,6 @@
         <p>Import data or fill the frequency grid to draw</p>
         <small>Supports CWB hourly format, CSV, or manual count entry</small>
       </div>
-      <!-- manual-grid mode: single rose (no temperature available) -->
       <div class="rose-row" id="rose-row" style="display:none">
         <div class="canvas-col">
           <canvas id="rose"></canvas>
@@ -275,7 +262,6 @@
         </div>
         <div id="dir-table-wrap"></div>
       </div>
-      <!-- raw hourly data mode: All Hours + Hot Hours per REV04 -->
       <div id="dual-wrap" style="display:none">
         <div class="rev-note" id="rev04-note"></div>
         <div class="rose-dual">
@@ -304,7 +290,7 @@
 </div>
 <script>
 (()=>{
-  let N=8; let CALM=0; // REV04 §External-Scenario: wind data grouped into eight 45° directional bins
+  let N=8; let CALM=0; const OUTER_RING=15;
   const BANDS=[
     {max:1,color:'#d73027'},
     {max:2,color:'#fc8d59'},
@@ -316,7 +302,6 @@
     const lo=i===0?0:BANDS[i-1].max;
     return BANDS[i].max===Infinity?`${lo}+ m/s`:`${lo}–${BANDS[i].max} m/s`;
   };
-  // round a value up to a "nice" number (1/2/4/5/10 × 10^n) with ~15% headroom, so ring labels read cleanly
   function niceMax(v){
     if(v<=0)return 10;
     const target=v*1.15;
@@ -327,22 +312,16 @@
   }
   const DLBL16=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
   const DLBL8=['N','NE','E','SE','S','SW','W','NW'];
-  let DLBL=DLBL8.slice(); // mutable copy (dblclick-to-rename edits it in place); regenerated when bin count changes
+  let DLBL=DLBL8.slice();
   const MTW=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
   const COMPASSDEG={N:0,NNE:22.5,NE:45,ENE:67.5,E:90,ESE:112.5,SE:135,SSE:157.5,S:180,SSW:202.5,SW:225,WSW:247.5,W:270,WNW:292.5,NW:315,NNW:337.5};
-
   let allRec=[], selM=new Set([1,2,3,4,5,6,7,8,9,10,11,12]);
-  // gridData[dir][band] = percent (0-100); null means not from grid
   let gridData=null, gridCalm=0;
-  // REV04 Hot Hours threshold: min(ASHRAE 0.4% design dry-bulb, fallback ceiling)
   let ashraeTemp=null, fallbackCeil=35;
-  let e5DirIdx=0; // user-selected direction for E5 "discretion of CRE"
+  let e5DirIdx=0;
   function hotThreshold(){
     return (ashraeTemp!=null && !isNaN(ashraeTemp)) ? Math.min(ashraeTemp,fallbackCeil) : fallbackCeil;
   }
-
-  // ── Frequency grid ─────────────────────────────────────────────
-  // generic dblclick-to-edit for a table cell
   function makeEditable(el,getVal,setVal,opts={}){
     el.addEventListener('dblclick',()=>{
       if(el.querySelector('input'))return;
@@ -375,7 +354,6 @@
       });
     });
   }
-
   function buildGrid(){
     const tbl=document.getElementById('gtbl');
     const thCols=BANDS.map((b,i)=>
@@ -400,7 +378,6 @@
     });
     updateGridFoot();
   }
-
   function renderGridRows(){
     const tbody=document.getElementById('gbody');
     tbody.innerHTML='';
@@ -427,7 +404,6 @@
       makeEditable(td,()=>DLBL[d],v=>{DLBL[d]=String(v);td.textContent=DLBL[d];drawRose();});
     });
   }
-
   function onGridInput(e){
     const d=+e.target.dataset.d, s=+e.target.dataset.s;
     let v=parseFloat(e.target.value);
@@ -441,7 +417,6 @@
     updateGridStatus();
     drawRose();
   }
-
   function onCalmInput(e){
     let v=parseFloat(e.target.value);
     if(isNaN(v))v=0;
@@ -451,8 +426,6 @@
     updateGridStatus();
     drawRose();
   }
-
-  // updates the computed (non-input) cells in tfoot without touching the calm input's live value
   function updateGridFoot(){
     const bandSums=Array.from({length:BANDS.length},(_,s)=>gridData?gridData.reduce((a,r)=>a+r[s],0):0);
     const bandTotal=bandSums.reduce((a,b)=>a+b,0);
@@ -466,7 +439,6 @@
     if(Math.abs(grand-100)<0.005)g.classList.add('ok');
     else if(grand>100)g.classList.add('warn');
   }
-
   function updateGridStatus(){
     const el=document.getElementById('grid-status');
     if(!gridData){el.textContent='';el.className='st';return;}
@@ -474,12 +446,10 @@
     el.textContent=`目前總和 ${grand.toFixed(2)}%`;
     el.className='st'+(Math.abs(grand-100)<0.005?' ok':grand>100?' err':'');
   }
-
   document.getElementById('gpanel-hd').addEventListener('click',()=>{
     document.getElementById('gpanel-hd').classList.toggle('open');
     document.getElementById('gpanel-bd').classList.toggle('open');
   });
-
   document.getElementById('grid-clear-btn').addEventListener('click',()=>{
     gridData=null;gridCalm=0;
     renderGridRows();
@@ -492,9 +462,7 @@
       document.getElementById('stat-grid').innerHTML='<div class="sc full" style="color:var(--muted);font-size:.78rem;text-align:center;background:none">尚未載入資料</div>';
     }else drawRose();
   });
-
   document.getElementById('grid-demo-btn').addEventListener('click',()=>{
-    // random weights normalized to sum exactly 100.00% (bins + calm) for a clean demo
     const cells=N*BANDS.length+1;
     const w=Array.from({length:cells},()=>Math.random());
     const sum=w.reduce((a,b)=>a+b,0);
@@ -508,10 +476,7 @@
     updateGridStatus();
     drawRose();
   });
-
   buildGrid();
-
-  // ── Month checkboxes ────────────────────────────────────────────
   const mgrid=document.getElementById('month-grid');
   MTW.forEach((m,i)=>{
     const mo=i+1;
@@ -534,25 +499,20 @@
     const cl=new Set([1,2,3,10,11,12]);
     cbs().forEach(c=>{c.checked=cl.has(+c.value);if(c.checked)selM.add(+c.value);else selM.delete(+c.value);});drawRose();
   };
-
-  // ── Collapsible sections ────────────────────────────────────────
   document.querySelectorAll('.sec-hd').forEach(hd=>{
     hd.addEventListener('click',()=>{
       hd.classList.toggle('open');
       document.getElementById(hd.dataset.t).classList.toggle('open');
     });
   });
-
   document.getElementById('calm-in').addEventListener('input',e=>{CALM=parseFloat(e.target.value)||0;drawRose();});
-
-  // ── REV04 controls: direction-bin count + Hot Hours threshold ────
   document.querySelectorAll('input[name=dirbins]').forEach(r=>{
     r.addEventListener('change',e=>{
       if(!e.target.checked)return;
       N=+e.target.value;
       DLBL=(N===8?DLBL8:DLBL16).slice();
       e5DirIdx=0;
-      gridData=null;gridCalm=0; // bin count changed → manual grid dimensions no longer match
+      gridData=null;gridCalm=0;
       buildGrid();
       if(!allRec.length){
         document.getElementById('rose-row').style.display='none';
@@ -577,12 +537,10 @@
     if(allRec.length)drawRose();
   });
   updateThrOut();
-
-  // ── CWB parser ──────────────────────────────────────────────────
   function parseCWB(text){
     const lines=text.split(/\r?\n/);
     const rec=[];
-    const seen=new Set(); // ponytail: same timestamp pasted twice (overlapping selection) shouldn't double-count
+    const seen=new Set();
     let cur=null;
     for(const line of lines){
       const dm=line.match(/時間[：:]\s*(\d{4})年(\d{1,2})月(\d{1,2})日/);
@@ -592,7 +550,6 @@
       if(isNaN(hr)||hr<1||hr>24||f.length<6)continue;
       const pres=parseFloat(f[1]);
       if(isNaN(pres)||pres<800||pres>1100)continue;
-      // CWB layout: Hour,Pressure,Temperature,Relative Humidity,Mean Wind Speed,Mean Wind Direction,Precipitation
       const temp=parseFloat(f[2]);
       const rh=parseFloat(f[3]);
       const spd=parseFloat(f[4]);
@@ -605,7 +562,6 @@
     }
     return rec;
   }
-
   function parseGeneric(text){
     const lines=text.trim().split(/\r?\n/).filter(l=>l.trim());
     if(lines.length<2)return[];
@@ -622,13 +578,11 @@
       return{year:null,month:null,day:null,hour:null,speed,dir:isNaN(dir)?null:dir,temp:null,rh:null};
     }).filter(r=>!isNaN(r.speed));
   }
-
   function ingest(text){
     let r=parseCWB(text);
     if(!r.length)r=parseGeneric(text);
     return r;
   }
-
   function loadRec(rec){
     allRec=rec;
     const st=document.getElementById('import-status');
@@ -637,19 +591,13 @@
     document.getElementById('clear-btn').disabled=false;
     drawRose();
   }
-
-  // ── Compute bins ────────────────────────────────────────────────
   function computeBins(){
-    // Grid mode: use gridData directly (percentages, not raw records — no temp available)
     const tots=gridData.map(r=>r.reduce((a,b)=>a+b,0));
     const calm=gridCalm||0;
     const total=tots.reduce((a,b)=>a+b,0)+calm;
     const pd=DLBL[tots.indexOf(Math.max(...tots))];
     return{bins:gridData.map(r=>[...r]),calm,total,avg:0,pd};
   }
-
-  // Generalized raw-record binning, reused for All Hours + Hot Hours (and E1–E5 stats,
-  // which need the underlying records per direction, not just counts).
   function binRecords(records){
     const sz=360/N;
     const bins=Array.from({length:N},()=>new Array(BANDS.length).fill(0));
@@ -670,7 +618,6 @@
     const pdIdx=maxTot>0?tots.indexOf(maxTot):-1;
     return{bins,recsByDir,calm,total,avg,pd:pdIdx>=0?DLBL[pdIdx]:'—',pdIdx,tots};
   }
-
   function median(arr){
     if(!arr.length)return null;
     const s=[...arr].sort((a,b)=>a-b),m=s.length>>1;
@@ -682,14 +629,11 @@
     const lo=Math.floor(idx),hi=Math.ceil(idx);
     return lo===hi?s[lo]:s[lo]+(s[hi]-s[lo])*(idx-lo);
   }
-  // Stull (2011) single-formula wet-bulb approximation from dry-bulb °C + RH % — no psychrometric
-  // library needed, valid roughly -20–50°C / 5–99% RH, plenty for this use.
   function wetBulbApprox(t,rh){
     if(t==null||rh==null||isNaN(t)||isNaN(rh))return null;
     return t*Math.atan(0.151977*Math.sqrt(rh+8.313659))+Math.atan(t+rh)
       -Math.atan(rh-1.676331)+0.00391838*Math.pow(rh,1.5)*Math.atan(0.023101*rh)-4.686035;
   }
-
   function updateStats(calm,total,avg,pd){
     const el=document.getElementById('stat-grid');
     if(!total){el.innerHTML='<div class="sc full" style="color:var(--muted);font-size:.78rem;text-align:center;background:none">無符合條件的資料</div>';return;}
@@ -699,20 +643,12 @@
       <div class="sc"><div class="v">${pd}</div><div class="l">最常見風向</div></div>
       <div class="sc"><div class="v">${total?((calm/total*100).toFixed(1)+'%'):'—'}</div><div class="l">靜風率</div></div>`;
   }
-
   function drawArc(ctx,cx,cy,r0,r1,a0,a1,col){
     ctx.beginPath();
     if(r0<0.5){ctx.moveTo(cx,cy);ctx.arc(cx,cy,r1,a0,a1);}
     else{ctx.arc(cx,cy,r1,a0,a1);ctx.arc(cx,cy,r0,a1,a0,true);}
     ctx.closePath();ctx.fillStyle=col;ctx.fill();
   }
-
-  // Paints one wind rose into a given canvas. bins are percentages when gridData is active,
-  // raw counts otherwise (matches the original single-rose behaviour, now shared by 1–2 roses).
-  // A blank "Calm" disc of radius R0 sits at the centre and every direction's stack starts at
-  // R0 (not 0) — at true centre a polar wedge's width collapses to a point no matter how big
-  // its value is, so small bands were invisible; starting from R0 guarantees a visible minimum
-  // width for every band, and gives Calm a real circle instead of overlapping text.
   function paintRoseCanvas(canvas,bins,calm,total,sizeBudget){
     const dpr=window.devicePixelRatio||1,sz=Math.max(160,sizeBudget);
     canvas.width=canvas.height=sz*dpr;
@@ -729,7 +665,7 @@
     }
     const tots=bins.map(b=>b.reduce((s,c)=>s+c,0));
     const rawMaxPct=gridData?Math.max(...tots,0):Math.max(...tots,0)/total*100;
-    const maxP=niceMax(rawMaxPct);
+    const maxP=rawMaxPct>0?rawMaxPct:1;
     const maxC=gridData?maxP:maxP/100*total;
     for(let i=1;i<=4;i++){
       const r=R0+(R-R0)*i/4;
@@ -751,7 +687,8 @@
       let prev=0;
       for(let s=0;s<BANDS.length;s++){
         const cnt=bins[b][s];
-        if(cnt>0)drawArc(ctx,cx,cy,R0+prev/maxC*(R-R0),R0+(prev+cnt)/maxC*(R-R0),a0,a1,BANDS[s].color);
+        const rIn=Math.min(R,R0+prev/maxC*(R-R0)), rOut=Math.min(R,R0+(prev+cnt)/maxC*(R-R0));
+        if(cnt>0&&rOut>rIn)drawArc(ctx,cx,cy,rIn,rOut,a0,a1,BANDS[s].color);
         prev+=cnt;
       }
     }
@@ -763,7 +700,6 @@
       ctx.font=(card?'bold 13px':'11px')+' system-ui';
       ctx.fillText(lbl,cx+lr*Math.cos(a),cy+lr*Math.sin(a));
     }
-    // blank white Calm disc, drawn last so it sits cleanly over the spokes/wedge tips that meet it
     ctx.beginPath();ctx.arc(cx,cy,R0,0,2*Math.PI);ctx.fillStyle='#fff';ctx.fill();
     ctx.lineWidth=1;ctx.strokeStyle='#dce8f0';ctx.stroke();
     ctx.textAlign='center';ctx.textBaseline='middle';
@@ -772,14 +708,12 @@
     ctx.textAlign='right';ctx.textBaseline='top';ctx.font='9px system-ui';ctx.fillStyle='#b8c8d8';
     ctx.fillText(gridData?('total = '+total.toFixed(2)+'%'):('n = '+total.toLocaleString()),sz-6,6);
   }
-
   function paintLegend(elId){
     document.getElementById(elId).innerHTML=
       BANDS.map((b,i)=>i).reverse().map(i=>`<div class="li"><div class="ls" style="background:${BANDS[i].color}"></div>${bandLabel(i)}</div>`).join('')+
       (gridData?`<div class="li"><div class="ls" style="background:#e0eaf2;border-color:#ccd8e4"></div>Calm (manual %)</div>`
         :`<div class="li"><div class="ls" style="background:#e0eaf2;border-color:#ccd8e4"></div>Calm ≤${CALM} m/s</div>`);
   }
-
   function paintDirTable(elId,bins,calm,total){
     const rows=DLBL.map((lbl,d)=>{
       const cnt=bins[d].reduce((a,b)=>a+b,0);
@@ -796,8 +730,6 @@
         </tbody>
       </table>`;
   }
-
-  // ── Top-level draw dispatcher ─────────────────────────────────────
   function drawRose(){
     const roseWrap=document.getElementById('rose-wrap');
     if(!allRec.length&&!gridData){
@@ -810,9 +742,6 @@
     }
     if(gridData)drawSingleGridRose();else drawDualRoses();
   }
-
-  // Manual-grid mode: one rose, percentages typed by hand — no temperature, so Hot Hours /
-  // CFD scenario table don't apply here.
   function drawSingleGridRose(){
     document.getElementById('dual-wrap').style.display='none';
     document.getElementById('epanel').style.display='none';
@@ -832,9 +761,6 @@
     paintLegend('legend');
     paintDirTable('dir-table-wrap',bins,calm,total);
   }
-
-  // Raw hourly data mode: REV04 requires two wind roses (All Hours + Hot Hours) plus the
-  // Table-2 CFD scenario values, all derived straight from the imported records.
   function drawDualRoses(){
     document.getElementById('rose-row').style.display='none';
     const base=allRec.filter(r=>r.month==null||selM.has(r.month));
@@ -850,27 +776,21 @@
     document.getElementById('empty-state').style.display='none';
     document.getElementById('dual-wrap').style.display='';
     document.getElementById('rose-wrap').classList.add('scrollable');
-
     const thr=hotThreshold();
     const hotBase=base.filter(r=>r.temp!=null&&r.temp>thr);
     const hotB=binRecords(hotBase);
-
     const rw=document.getElementById('rose-wrap');
     const sizeBudget=Math.max(200,Math.min((rw.clientWidth-540)/2,380,rw.clientHeight-180));
-
     paintRoseCanvas(document.getElementById('rose-all'),allB.bins,allB.calm,allB.total,sizeBudget);
     paintLegend('legend-all');
     paintDirTable('dir-table-all',allB.bins,allB.calm,allB.total);
-
     paintRoseCanvas(document.getElementById('rose-hot'),hotB.bins,hotB.calm,hotB.total,sizeBudget);
     paintLegend('legend-hot');
     paintDirTable('dir-table-hot',hotB.bins,hotB.calm,hotB.total);
-
     const hasTemp=base.some(r=>r.temp!=null);
     document.getElementById('hh-pct').textContent=hasTemp
       ?`門檻>${thr.toFixed(1)}℃ · ${(base.length?hotBase.length/base.length*100:0).toFixed(1)}% of hours`
       :'資料無溫度欄位';
-
     const years=[...new Set(allRec.map(r=>r.year).filter(Boolean))];
     const note=document.getElementById('rev04-note');
     if(years.length){
@@ -883,13 +803,9 @@
         note.textContent=`資料涵蓋 ${Math.min(...years)}–${Math.max(...years)}（約 ${span} 年），符合 REV04 20 年最低要求`;
       }
     }else note.textContent='';
-
     document.getElementById('epanel').style.display=hasTemp?'':'none';
     if(hasTemp)buildScenarioTable(base,allB,hotBase,hotB);
   }
-
-  // ── Table-2 CFD scenarios (REV04 External-Scenario, E1–E5) ───────
-  // rank 0 = prevailing direction, rank 1 = 2nd prevailing, by hour-count within binResult
   function nthPrevailing(binResult,rank){
     const order=binResult.tots.map((t,i)=>[t,i]).filter(([t])=>t>0).sort((a,b)=>b[0]-a[0]);
     if(order.length<=rank)return null;
@@ -904,19 +820,14 @@
     }
     return wet==null?null:{wet,dry,ws};
   }
-
   function buildScenarioTable(allBase,allB,hotBase,hotB){
     const fmt=(v,d=1)=>v==null?'<span class="na">no data</span>':v.toFixed(d);
     const rows=[];
-
-    // E1 — dry-bulb: highest recorded temp anywhere in the (month-filtered) dataset. WD/WS N/A.
     const tempsAll=allBase.map(r=>r.temp).filter(v=>v!=null);
     const e1Temp=tempsAll.length?Math.max(...tempsAll):null;
     rows.push(['E1','N/A','N/A',fmt(e1Temp)]);
     const e1w=hottestWetBulb(allBase);
     if(e1w)rows.push(['','wet-bulb variant',fmt(e1w.ws)+' m/s',`Tw ${fmt(e1w.wet)} / Tdb(coincidental) ${fmt(e1w.dry)}`,'wetrow']);
-
-    // E2 — prevailing WD from the Hot Hours Wind Rose; median WS + max temp within that WD & hot hours.
     const p2=nthPrevailing(hotB,0);
     if(p2){
       const speeds=p2.recs.map(r=>r.speed), temps=p2.recs.map(r=>r.temp).filter(v=>v!=null);
@@ -924,39 +835,29 @@
       const w=hottestWetBulb(p2.recs);
       if(w)rows.push(['','wet-bulb variant',fmt(w.ws)+' m/s',`Tw ${fmt(w.wet)} / Tdb(coincidental) ${fmt(w.dry)}`,'wetrow']);
     }else rows.push(['E2','no data','no data','no data']);
-
-    // E3 — 2nd prevailing WD from the Hot Hours Wind Rose (same stats, no wet-bulb duplicate required).
     const p3=nthPrevailing(hotB,1);
     if(p3){
       const speeds=p3.recs.map(r=>r.speed), temps=p3.recs.map(r=>r.temp).filter(v=>v!=null);
       rows.push(['E3',`${DLBL[p3.dirIdx]} <small>(2nd prevailing)</small>`,fmt(median(speeds))+' m/s (median)',fmt(temps.length?Math.max(...temps):null)]);
     }else rows.push(['E3','no data','no data','no data']);
-
-    // E4 — prevailing WD from the All Hours Wind Rose; 95th percentile WS & temp within that WD.
     const p4=nthPrevailing(allB,0);
     if(p4){
       const speeds=p4.recs.map(r=>r.speed), temps=p4.recs.map(r=>r.temp).filter(v=>v!=null);
       rows.push(['E4',`${DLBL[p4.dirIdx]} <small>(All Hours prevailing)</small>`,fmt(percentile(speeds,0.95))+' m/s (95th pct)',fmt(percentile(temps,0.95))]);
     }else rows.push(['E4','no data','no data','no data']);
-
-    // E5 — "discretion of CRE": user picks the direction, same 95th-percentile stats as E4.
     const e5recs=(allB.recsByDir[e5DirIdx]||[]);
     const e5speeds=e5recs.map(r=>r.speed), e5temps=e5recs.map(r=>r.temp).filter(v=>v!=null);
     const dirOptions=DLBL.map((l,i)=>`<option value="${i}" ${i===e5DirIdx?'selected':''}>${l}</option>`).join('');
     rows.push(['E5',`<select id="e5-sel">${dirOptions}</select> <small>(discretion of CRE)</small>`,
       fmt(percentile(e5speeds,0.95))+' m/s (95th pct)',fmt(percentile(e5temps,0.95))]);
-
     document.getElementById('etbl').innerHTML=
       `<thead><tr><th>Case</th><th>Wind Direction</th><th>Wind Speed</th><th>Dry Bulb Temp (℃)</th></tr></thead>`+
       `<tbody>${rows.map(r=>`<tr class="${r[4]||''}"><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</tbody>`;
-
     document.getElementById('e5-sel').addEventListener('change',e=>{
       e5DirIdx=+e.target.value;
       buildScenarioTable(allBase,allB,hotBase,hotB);
     });
   }
-
-  // ── Import events ───────────────────────────────────────────────
   const pa=document.getElementById('paste-area');
   pa.addEventListener('paste',()=>{
     setTimeout(()=>{
@@ -966,7 +867,6 @@
       loadRec(r);
     },10);
   });
-
   document.getElementById('file-in').addEventListener('change',e=>{
     const f=e.target.files[0];if(!f)return;
     const isXL=/\.(xlsx|xls)$/i.test(f.name);
@@ -984,20 +884,13 @@
     };
     if(isXL)rd.readAsArrayBuffer(f);else rd.readAsText(f,'UTF-8');
   });
-
   function parseXLSX(wb){
     const recs=[];
-    // ponytail: CWB workbooks commonly ship both a per-year sheet AND an "all years merged" sheet
-    // covering the same hours (this file's combined sheet duplicates all 11 yearly ones 1:1, which
-    // silently doubled every total/percentage). Dedupe by exact timestamp across every sheet so the
-    // key wind-rose data (counts per direction/speed bin) is captured once, correctly.
     const seenHours=new Set();
     for(const sheetName of wb.SheetNames){
       const ws=wb.Sheets[sheetName];
       const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
       if(!aoa.length)continue;
-
-      // Find header row (first row with matching WD/WS columns)
       let hRow=-1,di=-1,si=-1;
       for(let i=0;i<Math.min(30,aoa.length);i++){
         const h=aoa[i].map(c=>String(c||'').trim().toLowerCase());
@@ -1006,15 +899,11 @@
         if(d>=0&&s>=0){hRow=i;di=d;si=s;break;}
       }
       if(hRow<0)continue;
-
-      // Detect CWB Excel format: look for 時間: pattern in rows below header
       let isCWB=false;
       for(let i=hRow+1;i<Math.min(hRow+50,aoa.length);i++){
         if(String(aoa[i][0]||'').match(/時間[：:]/)){isCWB=true;break;}
       }
-
       if(isCWB){
-        // CWB layout ties Temperature/RH two columns before Speed: Hour,Pressure,Temp,RH,Speed,Dir,Precip
         const ti=si-2, hi=si-1;
         let cur={year:null,month:null,day:null};
         for(let i=1;i<aoa.length;i++){
@@ -1046,7 +935,6 @@
     }
     return recs;
   }
-
   document.getElementById('demo-btn').addEventListener('click',()=>{
     const rng=Math.random,randn=()=>{let u=0,v=0;while(!u)u=rng();while(!v)v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
     const rec=[];
@@ -1059,7 +947,6 @@
             if(mo>=10||mo<=3){dir=45+randn()*25;spd=Math.abs(randn()*2.5+4);}
             else if(mo>=6&&mo<=9){dir=225+randn()*30;spd=Math.abs(randn()*1.5+2.5);}
             else{dir=rng()*360;spd=Math.abs(randn()*2+2);}
-            // synthetic seasonal temperature + RH so the Hot Hours / CFD demo has something to filter on
             const seasonal=25+9*Math.sin((mo-4)/12*2*Math.PI)+3*Math.sin((hr-15)/24*2*Math.PI);
             const temp=+(seasonal+randn()*1.5).toFixed(1);
             const rh=+Math.min(99,Math.max(35,70-(temp-25)*2+randn()*8)).toFixed(0);
@@ -1071,7 +958,6 @@
     loadRec(rec);
     document.getElementById('import-status').textContent=`Demo：${rec.length.toLocaleString()} 筆（2020–2022 模擬）`;
   });
-
   document.getElementById('clear-btn').addEventListener('click',()=>{
     allRec=[];pa.value='';
     document.getElementById('import-status').textContent='';
@@ -1085,7 +971,6 @@
       document.getElementById('stat-grid').innerHTML='<div class="sc full" style="color:var(--muted);font-size:.78rem;text-align:center;background:none">尚未載入資料</div>';
     }else drawRose();
   });
-
   function downloadCanvas(canvasId,filename){
     const a=document.createElement('a');
     a.download=filename;
@@ -1095,12 +980,10 @@
   document.getElementById('dl-btn').addEventListener('click',()=>downloadCanvas('rose','coreinfra_windrose.png'));
   document.getElementById('dl-all-btn').addEventListener('click',()=>downloadCanvas('rose-all','coreinfra_windrose_allhours.png'));
   document.getElementById('dl-hot-btn').addEventListener('click',()=>downloadCanvas('rose-hot','coreinfra_windrose_hothours.png'));
-
   document.getElementById('epanel-hd').addEventListener('click',()=>{
     document.getElementById('epanel-hd').classList.toggle('open');
     document.getElementById('epanel-bd').classList.toggle('open');
   });
-
   window.addEventListener('resize',()=>{if(allRec.length||gridData)drawRose();});
 })();
 </script>
