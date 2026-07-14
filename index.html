@@ -1,223 +1,1107 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>風玫瑰圖 Wind Rose Plot</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.47.0/iconfont/tabler-icons.min.css">
-<style>
-:root{
---surface-0:#f7f7f5;
---surface-1:#f1efe8;
---surface-2:#ffffff;
---border:rgba(11,11,11,0.10);
---text-primary:#0b0b0b;
---text-secondary:#52514e;
---text-muted:#898781;
---radius:8px;
-}
-*{box-sizing:border-box;}
-body{
-margin:0;
-padding:2rem 1.5rem;
-background:var(--surface-0);
-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-color:var(--text-primary);
-}
-.page{
-max-width:820px;
-margin:0 auto;
-}
-h1{
-font-size:20px;
-font-weight:500;
-margin:0 0 1.25rem;
-}
-select,button{
-height:36px;
-padding:0 10px;
-border-radius:var(--radius);
-border:0.5px solid var(--border);
-background:var(--surface-2);
-color:var(--text-primary);
-font-size:14px;
-}
-button{
-cursor:pointer;
-display:inline-flex;
-align-items:center;
-}
-button:hover{background:var(--surface-1);}
-button:active{transform:scale(0.98);}
-select:focus,button:focus{outline:2px solid #185FA5; outline-offset:1px;}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CoreInfra 風花圖</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root{--bg:#F2F6FA;--surface:#fff;--border:#dce8f0;--text:#1a2332;--muted:#6b7a8d;--accent:#1f4e79;--a2:#2e75b6;--r:8px;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+    header{background:var(--accent);height:56px;padding:0 1.25rem;display:flex;align-items:center;gap:.85rem;box-shadow:0 2px 8px rgba(0,0,0,.25);flex-shrink:0;}
+    header img{height:36px;width:36px;object-fit:contain;border-radius:4px;background:#fff;padding:2px;}
+    .ht{display:flex;flex-direction:column;line-height:1.2;}
+    .hn{font-size:.98rem;font-weight:700;color:#fff;}
+    .hs{font-size:.67rem;color:rgba(255,255,255,.6);letter-spacing:.04em;}
+    .hb{margin-left:auto;background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.3);padding:3px 10px;border-radius:99px;font-size:.67rem;font-weight:500;letter-spacing:.05em;}
+    .app{display:flex;flex:1;overflow:hidden;}
+    aside{width:262px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column;}
+    ::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+    .sec{border-bottom:1px solid var(--border);}
+    .sec-hd{display:flex;align-items:center;justify-content:space-between;padding:.65rem 1rem;cursor:pointer;user-select:none;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+    .sec-hd:hover{background:var(--bg);}
+    .sec-hd svg{transition:transform .2s;}
+    .sec-hd.open svg{transform:rotate(180deg);}
+    .sec-bd{padding:.7rem 1rem .9rem;display:none;}
+    .sec-bd.open{display:block;}
+    .fl{display:block;font-size:.72rem;color:var(--muted);font-weight:500;margin:.6rem 0 .2rem;}
+    .fl:first-child{margin-top:0;}
+    textarea{width:100%;height:100px;padding:.45rem .55rem;border:1px solid var(--border);border-radius:var(--r);font-size:.75rem;font-family:monospace;resize:vertical;background:var(--bg);color:var(--text);outline:none;}
+    textarea:focus{border-color:var(--a2);}
+    textarea::placeholder{font-family:sans-serif;color:var(--muted);font-size:.75rem;}
+    input[type=file]{display:none;}
+    .btns{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem;}
+    .btn{padding:5px 11px;border-radius:6px;font-size:.78rem;font-weight:500;cursor:pointer;border:none;transition:background .12s;white-space:nowrap;}
+    .btn:disabled{opacity:.4;cursor:not-allowed;}
+    .bp{background:var(--a2);color:#fff;}.bp:not(:disabled):hover{background:var(--accent);}
+    .bo{background:#fff;color:var(--text);border:1px solid var(--border);}.bo:hover{background:var(--bg);}
+    .bg{background:transparent;color:var(--muted);border:1px solid transparent;}.bg:hover{background:var(--bg);color:var(--text);}
+    .st{font-size:.73rem;color:var(--muted);margin-top:.4rem;min-height:14px;}.st.err{color:#c0392b;}
+    .mg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;}
+    .mcb{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;}
+    .mcb input{cursor:pointer;accent-color:var(--a2);}
+    .mcb span{font-size:.7rem;color:var(--muted);}
+    .mcb input:checked+span{color:var(--accent);font-weight:600;}
+    .sbs{display:flex;gap:.4rem;margin-top:.5rem;flex-wrap:wrap;}
+    .sb{font-size:.71rem;padding:3px 9px;border:1px solid var(--border);border-radius:5px;cursor:pointer;background:#fff;color:var(--muted);}.sb:hover{background:var(--bg);}
+    .sg{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+    .sc{background:var(--bg);border-radius:6px;padding:.5rem .6rem;}
+    .sc .v{font-size:1.1rem;font-weight:700;color:var(--accent);line-height:1.2;}
+    .sc .l{font-size:.68rem;color:var(--muted);margin-top:1px;}
+    .sc.full{grid-column:1/-1;}
+    /* main layout */
+    main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+    .rose-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:1rem;overflow:hidden;}
+    .rw{display:flex;flex-direction:column;align-items:center;gap:.85rem;}
+    .empty{text-align:center;color:#b0bfcf;padding:2rem;}
+    .empty svg{opacity:.4;}
+    .empty p{margin-top:.7rem;font-size:.9rem;color:var(--muted);}
+    .empty small{font-size:.75rem;color:#b8c8d8;}
+    canvas{display:block;border-radius:6px;box-shadow:0 2px 16px rgba(0,0,0,.1);}
+    .rose-row{display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;justify-content:center;}
+    .canvas-col{display:flex;flex-direction:column;align-items:center;gap:.7rem;}
+    .legend-wrap{text-align:center;}
+    .legend-hd{font-size:.72rem;font-weight:700;color:var(--muted);margin-bottom:.35rem;letter-spacing:.03em;}
+    .legend{display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center;}
+    .li{display:flex;align-items:center;gap:5px;font-size:.76rem;color:var(--muted);}
+    .ls{width:15px;height:11px;border-radius:2px;border:1px solid rgba(0,0,0,.12);flex-shrink:0;}
+    .dir-tbl{border-collapse:collapse;font-size:.75rem;}
+    .dir-tbl th{background:var(--accent);color:#fff;padding:4px 12px;font-size:.7rem;font-weight:600;text-align:center;}
+    .dir-tbl th:first-child{text-align:left;}
+    .dir-tbl td{padding:3px 12px;border-bottom:1px solid var(--border);text-align:right;}
+    .dir-tbl td:first-child{text-align:left;font-weight:500;color:var(--text);}
+    .dir-tbl tr:nth-child(even){background:var(--bg);}
+    .dir-tbl .calm-row{background:#eff6ff!important;}
+    .dir-tbl .calm-row td{font-weight:700;color:var(--accent);}
+    /* frequency grid panel */
+    .gpanel{background:var(--surface);border-bottom:2px solid var(--border);flex-shrink:0;}
+    .gpanel-hd{display:flex;align-items:center;justify-content:space-between;padding:.55rem 1rem;cursor:pointer;user-select:none;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+    .gpanel-hd:hover{background:var(--bg);}
+    .gpanel-hd svg{transition:transform .2s;}
+    .gpanel-hd.open svg{transform:rotate(180deg);}
+    .gpanel-bd{display:none;padding:.6rem 1rem .8rem;}
+    .gpanel-bd.open{display:block;}
+    .gtbar{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.6rem;}
+    .gscroll{overflow-x:auto;max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r);}
+    .gtbl{border-collapse:collapse;font-size:.75rem;min-width:520px;width:100%;}
+    .gtbl th{padding:5px 8px;font-size:.68rem;color:#fff;font-weight:600;text-align:center;position:sticky;top:0;z-index:1;white-space:nowrap;background:var(--accent);}
+    .gtbl th:first-child{text-align:left;background:var(--accent)!important;}
+    .gtbl th:last-child{background:#4a6080!important;}
+    .gtbl td{padding:2px 4px;border-top:1px solid var(--border);text-align:center;}
+    .gtbl td:first-child{font-size:.73rem;font-weight:700;color:var(--accent);padding:3px 10px;text-align:left;background:#f8fbff;}
+    .gtbl td:last-child{font-size:.73rem;color:var(--muted);font-weight:600;background:#f8fbff;min-width:44px;}
+    .gtbl tr:hover td{background:#f0f6ff;}
+    .gtbl tr:hover td:first-child,.gtbl tr:hover td:last-child{background:#e8f2ff;}
+    .gin{width:58px;padding:3px 4px;border:1px solid var(--border);border-radius:4px;font-size:.75rem;text-align:right;outline:none;background:#fff;}
+    .gin:focus{border-color:var(--a2);background:#eff6ff;}
+    .gtbl td.dname{cursor:pointer;}
+    .gtbl th.band-th{cursor:pointer;}
+    .gtbl td.calm-cell{background:#fbe2e2;text-align:center;vertical-align:middle;}
+    .gtbl tfoot td{border-top:2px solid var(--border);font-weight:700;background:#f8fbff;}
+    .gtbl tfoot .total-row td:first-child{text-align:left;}
+    .gtbl tfoot .grand-row td{text-align:right;font-size:.72rem;font-weight:500;color:var(--muted);background:#fff;border-top:none;}
+    .gtbl .gtot.ok{color:#1e7e34;}
+    .gtbl .gtot.warn{color:#c0392b;}
+    .st.ok{color:#1e7e34;}
+    /* REV04 additions */
+    .rg{display:flex;gap:.9rem;margin-top:.2rem;}
+    .rgi{display:flex;align-items:center;gap:4px;font-size:.76rem;color:var(--text);cursor:pointer;}
+    .rgi input{cursor:pointer;accent-color:var(--a2);}
+    .thr-row{display:flex;align-items:center;gap:6px;margin-top:.4rem;}
+    .thr-row input{width:66px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:.78rem;outline:none;}
+    .thr-row input:focus{border-color:var(--a2);}
+    .thr-out{font-size:.71rem;color:var(--muted);margin-top:.35rem;background:var(--bg);padding:4px 7px;border-radius:5px;}
+    .thr-out b{color:var(--accent);}
+    .rev-note{font-size:.75rem;padding:.5rem .7rem;border-radius:6px;background:#eff6ff;color:var(--accent);margin-bottom:.7rem;text-align:center;}
+    .rev-note.warn{background:#fdecea;color:#c0392b;}
+    .rose-wrap.scrollable{align-items:flex-start;overflow-y:auto;padding-top:1.2rem;}
+    .rose-dual{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;align-items:flex-start;}
+    .rose-block{display:flex;flex-direction:column;align-items:center;gap:.5rem;}
+    .rose-block-hd{font-size:.8rem;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:6px;}
+    .hh-pct{font-size:.68rem;font-weight:600;color:#fff;background:var(--a2);padding:2px 8px;border-radius:99px;}
+    .etbl{border-collapse:collapse;font-size:.74rem;width:100%;}
+    .etbl th{background:var(--accent);color:#fff;padding:5px 8px;font-size:.68rem;font-weight:600;text-align:center;white-space:nowrap;}
+    .etbl td{padding:4px 8px;border-top:1px solid var(--border);text-align:center;}
+    .etbl td:first-child,.etbl th:first-child{text-align:left;font-weight:700;color:var(--accent);}
+    .etbl tr:nth-child(even) td{background:var(--bg);}
+    .etbl .wetrow td{background:#eff6ff!important;font-style:italic;color:var(--muted);}
+    .etbl select{font:inherit;padding:2px 4px;border:1px solid var(--border);border-radius:4px;}
+    .etbl .na{color:#b0bfcf;}
+  </style>
 </head>
 <body>
-<div class="page">
-<h1>風玫瑰圖 Wind Rose Plot</h1>
-
-<h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Wind rose chart showing wind speed and direction frequency distribution, with controls for direction sectors, speed bin width, and color scheme</h2>
-
-<div class="wr-wrap" style="container-type:inline-size;width:100%;">
-
-<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:end;background:var(--surface-1);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;">
-<div>
-<label for="wr-dirs" style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px;">風向分區 Direction sectors</label>
-<select id="wr-dirs">
-<option value="8">8</option>
-<option value="16" selected>16</option>
-<option value="32">32</option>
-</select>
+<header>
+  <img src="data:image/png;base64,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" alt="CoreInfra">
+  <div class="ht"><span class="hn">CoreInfra 風花圖</span><span class="hs">WIND ROSE DIAGRAM SYSTEM</span></div>
+  <span class="hb">For Internal Purpose</span>
+</header>
+<div class="app">
+  <aside>
+    <!-- 資料匯入 -->
+    <div class="sec">
+      <div class="sec-hd open" data-t="bd-import">資料匯入
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+      </div>
+      <div class="sec-bd open" id="bd-import">
+        <textarea id="paste-area" placeholder="從 Excel 複製貼上氣象署逐時資料&#10;（含「時間：YYYY年MM月DD日」標題行）"></textarea>
+        <div class="btns">
+          <label class="btn bp" for="file-in">上傳檔案</label>
+          <input type="file" id="file-in" accept=".csv,.txt,.tsv,.xlsx,.xls">
+          <button class="btn bo" id="demo-btn">Demo 資料</button>
+        </div>
+        <div class="btns"><button class="btn bg" id="clear-btn" disabled>清除資料</button></div>
+        <div class="st" id="import-status"></div>
+      </div>
+    </div>
+    <!-- 靜風設定 -->
+    <div class="sec">
+      <div class="sec-hd open" data-t="bd-offset">Calm Threshold
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+      </div>
+      <div class="sec-bd open" id="bd-offset">
+        <label class="fl" for="calm-in">Calm threshold (m/s)</label>
+        <input type="number" id="calm-in" value="0" step="0.1" min="0"
+          style="width:80px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:.8rem;outline:none;">
+        <div class="st" style="margin-top:.3rem;color:var(--muted)">Speed ≤ threshold = calm</div>
+      </div>
+    </div>
+    <!-- REV04 情境設定 -->
+    <div class="sec">
+      <div class="sec-hd open" data-t="bd-rev04">REV04 情境設定
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+      </div>
+      <div class="sec-bd open" id="bd-rev04">
+        <label class="fl">風向分箱數</label>
+        <div class="rg">
+          <label class="rgi"><input type="radio" name="dirbins" value="8" checked>8方位（REV04 規範）</label>
+          <label class="rgi"><input type="radio" name="dirbins" value="16">16方位</label>
+        </div>
+        <label class="fl">Hot Hours 溫度門檻</label>
+        <div class="thr-row">
+          <span style="font-size:.72rem;color:var(--muted)">ASHRAE 0.4%</span>
+          <input type="number" id="ashrae-in" placeholder="選填" step="0.1">
+          <span style="font-size:.72rem;color:var(--muted)">℃</span>
+        </div>
+        <div class="thr-row">
+          <span style="font-size:.72rem;color:var(--muted)">Fallback上限</span>
+          <input type="number" id="fallback-in" value="35" step="0.1">
+          <span style="font-size:.72rem;color:var(--muted)">℃</span>
+        </div>
+        <div class="thr-out" id="thr-out">門檻 = <b>35.0℃</b>（取兩者較低）</div>
+      </div>
+    </div>
+    <!-- 月份篩選 -->
+    <div class="sec">
+      <div class="sec-hd open" data-t="bd-months">月份篩選
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+      </div>
+      <div class="sec-bd open" id="bd-months">
+        <div class="mg" id="month-grid"></div>
+        <div class="sbs">
+          <button class="sb" id="sel-all">全選</button>
+          <button class="sb" id="sel-none">取消全選</button>
+        </div>
+        <div class="sbs">
+          <button class="sb" id="sel-warm">暖季 4–9月</button>
+          <button class="sb" id="sel-cold">冷季 10–3月</button>
+        </div>
+      </div>
+    </div>
+    <!-- 資料摘要 -->
+    <div class="sec">
+      <div class="sec-hd open" data-t="bd-stats">資料摘要
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+      </div>
+      <div class="sec-bd open" id="bd-stats">
+        <div class="sg" id="stat-grid">
+          <div class="sc full" style="color:var(--muted);font-size:.78rem;text-align:center;background:none">尚未載入資料</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <main>
+    <!-- 頻率網格手動輸入 -->
+    <div class="gpanel">
+      <div class="gpanel-hd open" id="gpanel-hd">頻率網格手動輸入
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+      </div>
+      <div class="gpanel-bd open" id="gpanel-bd">
+        <div class="gtbar">
+          <button class="btn bo" id="grid-clear-btn">清除網格</button>
+          <button class="btn bo" id="grid-demo-btn">填入 Demo</button>
+          <span class="st" id="grid-status" style="margin-top:0"></span>
+        </div>
+        <div class="gscroll">
+          <table class="gtbl" id="gtbl"></table>
+        </div>
+      </div>
+    </div>
+    <!-- CFD 情境對照表 (Table-2, REV04) -->
+    <div class="gpanel" id="epanel" style="display:none">
+      <div class="gpanel-hd open" id="epanel-hd">CFD 情境對照表（Table-2 · REV04）
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+      </div>
+      <div class="gpanel-bd open" id="epanel-bd">
+        <div class="gscroll" style="max-height:none">
+          <table class="etbl" id="etbl"></table>
+        </div>
+      </div>
+    </div>
+    <!-- 風花圖 -->
+    <div class="rose-wrap" id="rose-wrap">
+      <div class="empty" id="empty-state">
+        <svg width="88" height="88" viewBox="0 0 88 88" fill="none" stroke="#90a8c0" stroke-width="1.5">
+          <circle cx="44" cy="44" r="40"/><circle cx="44" cy="44" r="26"/><circle cx="44" cy="44" r="10"/>
+          <line x1="44" y1="4" x2="44" y2="18"/><line x1="44" y1="70" x2="44" y2="84"/>
+          <line x1="4" y1="44" x2="18" y2="44"/><line x1="70" y1="44" x2="84" y2="44"/>
+          <line x1="15.7" y1="15.7" x2="25" y2="25"/><line x1="63" y1="63" x2="72.3" y2="72.3"/>
+          <line x1="72.3" y1="15.7" x2="63" y2="25"/><line x1="25" y1="63" x2="15.7" y2="72.3"/>
+        </svg>
+        <p>Import data or fill the frequency grid to draw</p>
+        <small>Supports CWB hourly format, CSV, or manual count entry</small>
+      </div>
+      <!-- manual-grid mode: single rose (no temperature available) -->
+      <div class="rose-row" id="rose-row" style="display:none">
+        <div class="canvas-col">
+          <canvas id="rose"></canvas>
+          <div class="legend-wrap" id="legend-wrap">
+            <div class="legend-hd">Wind Speed (m/s)</div>
+            <div class="legend" id="legend"></div>
+          </div>
+          <div id="export-bar">
+            <button class="btn bp" id="dl-btn">Download PNG</button>
+          </div>
+        </div>
+        <div id="dir-table-wrap"></div>
+      </div>
+      <!-- raw hourly data mode: All Hours + Hot Hours per REV04 -->
+      <div id="dual-wrap" style="display:none">
+        <div class="rev-note" id="rev04-note"></div>
+        <div class="rose-dual">
+          <div class="rose-block">
+            <div class="rose-block-hd">All Hours Wind Rose</div>
+            <div class="canvas-col">
+              <canvas id="rose-all"></canvas>
+              <div class="legend-wrap"><div class="legend-hd">Wind Speed (m/s)</div><div class="legend" id="legend-all"></div></div>
+              <button class="btn bp" id="dl-all-btn">Download PNG</button>
+            </div>
+            <div id="dir-table-all"></div>
+          </div>
+          <div class="rose-block">
+            <div class="rose-block-hd">Hot Hours Wind Rose<span class="hh-pct" id="hh-pct"></span></div>
+            <div class="canvas-col">
+              <canvas id="rose-hot"></canvas>
+              <div class="legend-wrap"><div class="legend-hd">Wind Speed (m/s)</div><div class="legend" id="legend-hot"></div></div>
+              <button class="btn bp" id="dl-hot-btn">Download PNG</button>
+            </div>
+            <div id="dir-table-hot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
 </div>
-<div>
-<label for="wr-binwidth" style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px;">風速分級寬度 Speed bin width (m/s)</label>
-<select id="wr-binwidth">
-<option value="1">1</option>
-<option value="2" selected>2</option>
-<option value="4">4</option>
-</select>
-</div>
-<div>
-<label for="wr-scheme" style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px;">配色方案 Color scheme</label>
-<select id="wr-scheme">
-<option value="vivid" selected>Vivid</option>
-<option value="blue">Blue</option>
-<option value="teal">Teal</option>
-<option value="coral">Coral</option>
-</select>
-</div>
-<button id="wr-regen" type="button"><i class="ti ti-refresh" aria-hidden="true" style="margin-right:6px;vertical-align:-2px;"></i>New sample</button>
-</div>
-
-<div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;">
-<div style="flex:1 1 320px;min-width:260px;">
-<svg id="wr-svg" viewBox="0 0 320 320" width="100%" height="auto" style="display:block;" role="img" aria-label="Wind rose polar chart of speed and direction frequency, outer ring at 15 percent"></svg>
-</div>
-<div id="wr-legend" style="flex:0 0 150px;display:flex;flex-direction:column;gap:6px;padding-top:8px;"></div>
-</div>
-
-</div>
-</div>
-
 <script>
-(function(){
-var seed = 42;
-var OUTER_RING = 15;
-var STOPS = {
-blue: ['#E6F1FB','#B5D4F4','#85B7EB','#378ADD','#185FA5','#0C447C','#042C53'],
-teal: ['#E1F5EE','#9FE1CB','#5DCAA5','#1D9E75','#0F6E56','#085041','#04342C'],
-coral: ['#FAECE7','#F5C4B3','#F0997B','#D85A30','#993C1D','#712B13','#4A1B0C']
-};
-var VIVID = ['#2a78d6','#1baf7a','#eda100','#008300','#9085e9','#e34948','#e87ba4','#eb6834'];
-var NAMES = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+(()=>{
+  let N=8; let CALM=0; // REV04 §External-Scenario: wind data grouped into eight 45° directional bins
+  const BANDS=[
+    {max:1,color:'#d73027'},
+    {max:2,color:'#fc8d59'},
+    {max:3,color:'#fee090'},
+    {max:4,color:'#abd9e9'},
+    {max:Infinity,color:'#4575b4'},
+  ];
+  const bandLabel=i=>{
+    const lo=i===0?0:BANDS[i-1].max;
+    return BANDS[i].max===Infinity?`${lo}+ m/s`:`${lo}–${BANDS[i].max} m/s`;
+  };
+  // round a value up to a "nice" number (1/2/4/5/10 × 10^n) with ~15% headroom, so ring labels read cleanly
+  function niceMax(v){
+    if(v<=0)return 10;
+    const target=v*1.15;
+    const base=Math.pow(10,Math.floor(Math.log10(target)));
+    const n=target/base;
+    const step=n<=1?1:n<=2?2:n<=4?4:n<=5?5:10;
+    return step*base;
+  }
+  const DLBL16=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+  const DLBL8=['N','NE','E','SE','S','SW','W','NW'];
+  let DLBL=DLBL8.slice(); // mutable copy (dblclick-to-rename edits it in place); regenerated when bin count changes
+  const MTW=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const COMPASSDEG={N:0,NNE:22.5,NE:45,ENE:67.5,E:90,ESE:112.5,SE:135,SSE:157.5,S:180,SSW:202.5,SW:225,WSW:247.5,W:270,WNW:292.5,NW:315,NNW:337.5};
 
-function hexToRgb(h){h=h.replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
-function rgbToHex(r,g,b){return '#'+[r,g,b].map(function(x){return Math.round(x).toString(16).padStart(2,'0');}).join('');}
-function colorAt(stops,i,n){
-var t = n<=1?1:i/(n-1);
-var pos = t*(stops.length-1);
-var lo = Math.floor(pos), hi = Math.min(stops.length-1,lo+1);
-var f = pos-lo;
-var c1=hexToRgb(stops[lo]), c2=hexToRgb(stops[hi]);
-return rgbToHex(c1[0]+(c2[0]-c1[0])*f, c1[1]+(c2[1]-c1[1])*f, c1[2]+(c2[2]-c1[2])*f);
-}
-function pickColor(scheme,i,n){
-if(scheme==='vivid') return VIVID[i % VIVID.length];
-return colorAt(STOPS[scheme], i, n);
-}
-function compassName(angleDeg){
-var idx = Math.round(angleDeg/22.5)%16;
-return NAMES[idx];
-}
-function annularPath(cx,cy,rIn,rOut,startA,endA){
-function xy(r,a){var rad=(a-90)*Math.PI/180;return [cx+r*Math.cos(rad), cy+r*Math.sin(rad)];}
-var p1=xy(rOut,startA), p2=xy(rOut,endA), p3=xy(rIn,endA), p4=xy(rIn,startA);
-var large = (endA-startA)>180?1:0;
-return 'M'+p1[0]+','+p1[1]+' A'+rOut+','+rOut+' 0 '+large+' 1 '+p2[0]+','+p2[1]+' L'+p3[0]+','+p3[1]+' A'+rIn+','+rIn+' 0 '+large+' 0 '+p4[0]+','+p4[1]+' Z';
-}
-function generateData(dirCount, binWidth, seedVal){
-var maxSpeed = 20;
-var numBins = Math.ceil(maxSpeed/binWidth);
-var bins = [];
-for(var i=0;i<numBins;i++) bins.push([i*binWidth,(i+1)*binWidth]);
-var s = seedVal;
-function rand(){ s = (s*1103515245+12345) & 0x7fffffff; return s/0x7fffffff; }
-var prevailing = 210;
-var freqs = [];
-var total = 0;
-for(var d=0; d<dirCount; d++){
-var angle = d*360/dirCount;
-var diff = Math.abs(angle-prevailing); if(diff>180) diff = 360-diff;
-var base = Math.exp(-(diff*diff)/(2*55*55))*0.8 + 0.2*rand() + 0.05;
-var row = [];
-for(var b=0;b<numBins;b++){
-var speedMid = bins[b][0]+binWidth/2;
-var w = (speedMid/8)*Math.exp(-Math.pow(speedMid/8,2));
-var v = Math.max(0, base*w*(0.7+0.6*rand()));
-row.push(v);
-total += v;
-}
-freqs.push(row);
-}
-for(var d2=0; d2<dirCount; d2++) for(var b2=0;b2<numBins;b2++) freqs[d2][b2] = freqs[d2][b2]/total*100;
-return {freqs:freqs, bins:bins};
-}
-function renderLegend(bins, scheme){
-var el = document.getElementById('wr-legend');
-var html = '<div style="font-size:clamp(11px,2.2cqw,13px);font-weight:500;color:var(--text-primary);margin-bottom:4px;">Wind speed (m/s)</div>';
-for(var i=0;i<bins.length;i++){
-var c = pickColor(scheme, i, bins.length);
-html += '<div style="display:flex;align-items:center;gap:8px;"><span style="width:14px;height:14px;border-radius:3px;background:'+c+';flex-shrink:0;"></span><span style="font-size:clamp(11px,2.2cqw,13px);color:var(--text-secondary);">'+bins[i][0]+'–'+bins[i][1]+'</span></div>';
-}
-el.innerHTML = html;
-}
-function draw(){
-var dirCount = +document.getElementById('wr-dirs').value;
-var binWidth = +document.getElementById('wr-binwidth').value;
-var scheme = document.getElementById('wr-scheme').value;
-var data = generateData(dirCount, binWidth, seed);
-var freqs = data.freqs, bins = data.bins;
-var cx=160, cy=160, maxR=118;
-var ringVal = OUTER_RING;
-var rings = [0.25,0.5,0.75,1].map(function(f){return f*ringVal;});
-var parts = [];
-rings.forEach(function(rv){
-var r = rv/ringVal*maxR;
-parts.push('<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="var(--border)" stroke-width="1"/>');
-parts.push('<text x="'+(cx+4)+'" y="'+(cy-r-2)+'" style="font-size:clamp(11px,2.4cqw,13px);" fill="var(--text-muted)">'+rv.toFixed(1)+'%</text>');
-});
-var sectorAngle = 360/dirCount;
-var gap = Math.min(2, sectorAngle*0.15);
-freqs.forEach(function(row,d){
-var rIn = 0;
-var startA = d*sectorAngle - sectorAngle/2 + gap/2;
-var endA = d*sectorAngle + sectorAngle/2 - gap/2;
-row.forEach(function(v,b){
-var rOut = Math.min(maxR, rIn + (v/ringVal*maxR));
-if(rOut>rIn){
-var fill = pickColor(scheme, b, row.length);
-var label = compassName(d*sectorAngle)+' '+bins[b][0]+'-'+bins[b][1]+' m/s: '+v.toFixed(2)+'%';
-parts.push('<path d="'+annularPath(cx,cy,rIn,rOut,startA,endA)+'" fill="'+fill+'"><title>'+label+'</title></path>');
-}
-rIn = rOut;
-});
-});
-var labelStep = dirCount/Math.min(dirCount,16);
-for(var d=0; d<dirCount; d+=labelStep){
-var angle = d*sectorAngle;
-var rad = (angle-90)*Math.PI/180;
-var lx = cx+(maxR+16)*Math.cos(rad);
-var ly = cy+(maxR+16)*Math.sin(rad);
-parts.push('<text x="'+lx+'" y="'+ly+'" text-anchor="middle" dominant-baseline="middle" style="font-size:clamp(11px,2.6cqw,14px);" fill="var(--text-secondary)">'+compassName(angle)+'</text>');
-}
-document.getElementById('wr-svg').innerHTML = parts.join('');
-renderLegend(bins, scheme);
-}
-document.getElementById('wr-dirs').addEventListener('change', draw);
-document.getElementById('wr-binwidth').addEventListener('change', draw);
-document.getElementById('wr-scheme').addEventListener('change', draw);
-document.getElementById('wr-regen').addEventListener('click', function(){ seed = Math.floor(Math.random()*1e6); draw(); });
-draw();
+  let allRec=[], selM=new Set([1,2,3,4,5,6,7,8,9,10,11,12]);
+  // gridData[dir][band] = percent (0-100); null means not from grid
+  let gridData=null, gridCalm=0;
+  // REV04 Hot Hours threshold: min(ASHRAE 0.4% design dry-bulb, fallback ceiling)
+  let ashraeTemp=null, fallbackCeil=35;
+  let e5DirIdx=0; // user-selected direction for E5 "discretion of CRE"
+  function hotThreshold(){
+    return (ashraeTemp!=null && !isNaN(ashraeTemp)) ? Math.min(ashraeTemp,fallbackCeil) : fallbackCeil;
+  }
+
+  // ── Frequency grid ─────────────────────────────────────────────
+  // generic dblclick-to-edit for a table cell
+  function makeEditable(el,getVal,setVal,opts={}){
+    el.addEventListener('dblclick',()=>{
+      if(el.querySelector('input'))return;
+      const cur=getVal();
+      const inp=document.createElement('input');
+      inp.type=opts.number?'number':'text';
+      if(opts.step!=null)inp.step=opts.step;
+      if(opts.min!=null)inp.min=opts.min;
+      if(opts.max!=null)inp.max=opts.max;
+      inp.value=cur;
+      inp.style.cssText='width:100%;min-width:44px;padding:1px 3px;font:inherit;border:1px solid var(--a2);border-radius:3px;box-sizing:border-box;';
+      el.textContent='';
+      el.appendChild(inp);
+      inp.focus();inp.select();
+      let done=false;
+      const commit=cancel=>{
+        if(done)return; done=true;
+        let v=cancel?cur:inp.value.trim();
+        if(opts.number){
+          v=parseFloat(v);if(isNaN(v))v=cur;
+          if(opts.min!=null)v=Math.max(opts.min,v);
+          if(opts.max!=null)v=Math.min(opts.max,v);
+        }else if(!v)v=cur;
+        setVal(v);
+      };
+      inp.addEventListener('blur',()=>commit(false));
+      inp.addEventListener('keydown',e=>{
+        if(e.key==='Enter')inp.blur();
+        else if(e.key==='Escape')commit(true);
+      });
+    });
+  }
+
+  function buildGrid(){
+    const tbl=document.getElementById('gtbl');
+    const thCols=BANDS.map((b,i)=>
+      `<th class="band-th" data-band="${i}" style="background:${b.color}" title="雙擊編輯上限值">${bandLabel(i)}</th>`
+    ).join('');
+    tbl.innerHTML=`<thead><tr><th>Wind Direction</th><th>Calm</th>${thCols}<th>Total%</th></tr></thead>`+
+      `<tbody id="gbody"></tbody>`+
+      `<tfoot id="gfoot">`+
+        `<tr class="total-row"><td>Total</td><td id="fcalm"></td>${BANDS.map((_,s)=>`<td id="fband-${s}"></td>`).join('')}<td class="gtot" id="fbandtotal"></td></tr>`+
+        `<tr class="grand-row"><td colspan="${2+BANDS.length}">Band Total + Calm =</td><td class="gtot" id="fgrand"></td></tr>`+
+      `</tfoot>`;
+    renderGridRows();
+    document.getElementById('calm-pct-in').addEventListener('input',onCalmInput);
+    document.querySelectorAll('.band-th').forEach(th=>{
+      const i=+th.dataset.band;
+      if(BANDS[i].max===Infinity)return;
+      makeEditable(th,()=>BANDS[i].max,v=>{
+        if(v>0)BANDS[i].max=v;
+        buildGrid();
+        drawRose();
+      },{number:true,step:0.1,min:0.1});
+    });
+    updateGridFoot();
+  }
+
+  function renderGridRows(){
+    const tbody=document.getElementById('gbody');
+    tbody.innerHTML='';
+    for(let d=0;d<N;d++){
+      const tr=document.createElement('tr');
+      let cells='';
+      for(let s=0;s<BANDS.length;s++){
+        const v=gridData?gridData[d][s]:0;
+        cells+=`<td><input class="gin" type="number" min="0" max="100" step="0.01" value="${v?v.toFixed(2):''}" placeholder="0.00" data-d="${d}" data-s="${s}"></td>`;
+      }
+      const tot=gridData?gridData[d].reduce((a,b)=>a+b,0):0;
+      const calmCell=d===0?`<td class="calm-cell" rowspan="${N}"><input class="gin" id="calm-pct-in" type="number" min="0" max="100" step="0.01" value="${gridCalm?gridCalm.toFixed(2):''}" placeholder="0.00"></td>`:'';
+      tr.innerHTML=`<td class="dname" data-d="${d}" title="雙擊編輯">${DLBL[d]}</td>`+
+        calmCell+
+        cells+
+        `<td class="gtot" id="gtot-${d}">${tot?tot.toFixed(2):''}</td>`;
+      tbody.appendChild(tr);
+    }
+    tbody.querySelectorAll('.gin').forEach(inp=>{
+      if(inp.id!=='calm-pct-in')inp.addEventListener('input',onGridInput);
+    });
+    tbody.querySelectorAll('.dname').forEach(td=>{
+      const d=+td.dataset.d;
+      makeEditable(td,()=>DLBL[d],v=>{DLBL[d]=String(v);td.textContent=DLBL[d];drawRose();});
+    });
+  }
+
+  function onGridInput(e){
+    const d=+e.target.dataset.d, s=+e.target.dataset.s;
+    let v=parseFloat(e.target.value);
+    if(isNaN(v))v=0;
+    v=Math.min(100,Math.max(0,v));
+    if(!gridData)gridData=Array.from({length:N},()=>new Array(BANDS.length).fill(0));
+    gridData[d][s]=v;
+    const tot=gridData[d].reduce((a,b)=>a+b,0);
+    document.getElementById('gtot-'+d).textContent=tot?tot.toFixed(2):'';
+    updateGridFoot();
+    updateGridStatus();
+    drawRose();
+  }
+
+  function onCalmInput(e){
+    let v=parseFloat(e.target.value);
+    if(isNaN(v))v=0;
+    v=Math.min(100,Math.max(0,v));
+    gridCalm=v;
+    updateGridFoot();
+    updateGridStatus();
+    drawRose();
+  }
+
+  // updates the computed (non-input) cells in tfoot without touching the calm input's live value
+  function updateGridFoot(){
+    const bandSums=Array.from({length:BANDS.length},(_,s)=>gridData?gridData.reduce((a,r)=>a+r[s],0):0);
+    const bandTotal=bandSums.reduce((a,b)=>a+b,0);
+    const grand=bandTotal+(gridCalm||0);
+    bandSums.forEach((v,s)=>{document.getElementById('fband-'+s).textContent=v?v.toFixed(2):'';});
+    const ft=document.getElementById('fbandtotal');
+    ft.textContent=bandTotal?bandTotal.toFixed(2):'';
+    const g=document.getElementById('fgrand');
+    g.textContent=grand.toFixed(2)+(Math.abs(grand-100)<0.005?' ✓':'');
+    g.classList.remove('ok','warn');
+    if(Math.abs(grand-100)<0.005)g.classList.add('ok');
+    else if(grand>100)g.classList.add('warn');
+  }
+
+  function updateGridStatus(){
+    const el=document.getElementById('grid-status');
+    if(!gridData){el.textContent='';el.className='st';return;}
+    const grand=gridData.flat().reduce((a,b)=>a+b,0)+(gridCalm||0);
+    el.textContent=`目前總和 ${grand.toFixed(2)}%`;
+    el.className='st'+(Math.abs(grand-100)<0.005?' ok':grand>100?' err':'');
+  }
+
+  document.getElementById('gpanel-hd').addEventListener('click',()=>{
+    document.getElementById('gpanel-hd').classList.toggle('open');
+    document.getElementById('gpanel-bd').classList.toggle('open');
+  });
+
+  document.getElementById('grid-clear-btn').addEventListener('click',()=>{
+    gridData=null;gridCalm=0;
+    renderGridRows();
+    document.getElementById('calm-pct-in').addEventListener('input',onCalmInput);
+    updateGridFoot();
+    updateGridStatus();
+    if(!allRec.length){
+      document.getElementById('rose-row').style.display='none';
+      document.getElementById('empty-state').style.display='';
+      document.getElementById('stat-grid').innerHTML='<div class="sc full" style="color:var(--muted);font-size:.78rem;text-align:center;background:none">尚未載入資料</div>';
+    }else drawRose();
+  });
+
+  document.getElementById('grid-demo-btn').addEventListener('click',()=>{
+    // random weights normalized to sum exactly 100.00% (bins + calm) for a clean demo
+    const cells=N*BANDS.length+1;
+    const w=Array.from({length:cells},()=>Math.random());
+    const sum=w.reduce((a,b)=>a+b,0);
+    const pct=w.map(x=>+(x/sum*100).toFixed(2));
+    pct[pct.length-1]=+(pct[pct.length-1]+(100-pct.reduce((a,b)=>a+b,0))).toFixed(2);
+    gridData=Array.from({length:N},(_,d)=>BANDS.map((_,s)=>pct[d*BANDS.length+s]));
+    gridCalm=pct[cells-1];
+    renderGridRows();
+    document.getElementById('calm-pct-in').addEventListener('input',onCalmInput);
+    updateGridFoot();
+    updateGridStatus();
+    drawRose();
+  });
+
+  buildGrid();
+
+  // ── Month checkboxes ────────────────────────────────────────────
+  const mgrid=document.getElementById('month-grid');
+  MTW.forEach((m,i)=>{
+    const mo=i+1;
+    const lbl=document.createElement('label');
+    lbl.className='mcb';
+    lbl.innerHTML=`<input type="checkbox" value="${mo}" checked><span>${m}</span>`;
+    lbl.querySelector('input').addEventListener('change',e=>{
+      if(e.target.checked)selM.add(mo);else selM.delete(mo); drawRose();
+    });
+    mgrid.appendChild(lbl);
+  });
+  const cbs=()=>mgrid.querySelectorAll('input[type=checkbox]');
+  document.getElementById('sel-all').onclick=()=>{cbs().forEach(c=>{c.checked=true;selM.add(+c.value);});drawRose();};
+  document.getElementById('sel-none').onclick=()=>{cbs().forEach(c=>{c.checked=false;selM.delete(+c.value);});drawRose();};
+  document.getElementById('sel-warm').onclick=()=>{
+    const w=new Set([4,5,6,7,8,9]);
+    cbs().forEach(c=>{c.checked=w.has(+c.value);if(c.checked)selM.add(+c.value);else selM.delete(+c.value);});drawRose();
+  };
+  document.getElementById('sel-cold').onclick=()=>{
+    const cl=new Set([1,2,3,10,11,12]);
+    cbs().forEach(c=>{c.checked=cl.has(+c.value);if(c.checked)selM.add(+c.value);else selM.delete(+c.value);});drawRose();
+  };
+
+  // ── Collapsible sections ────────────────────────────────────────
+  document.querySelectorAll('.sec-hd').forEach(hd=>{
+    hd.addEventListener('click',()=>{
+      hd.classList.toggle('open');
+      document.getElementById(hd.dataset.t).classList.toggle('open');
+    });
+  });
+
+  document.getElementById('calm-in').addEventListener('input',e=>{CALM=parseFloat(e.target.value)||0;drawRose();});
+
+  // ── REV04 controls: direction-bin count + Hot Hours threshold ────
+  document.querySelectorAll('input[name=dirbins]').forEach(r=>{
+    r.addEventListener('change',e=>{
+      if(!e.target.checked)return;
+      N=+e.target.value;
+      DLBL=(N===8?DLBL8:DLBL16).slice();
+      e5DirIdx=0;
+      gridData=null;gridCalm=0; // bin count changed → manual grid dimensions no longer match
+      buildGrid();
+      if(!allRec.length){
+        document.getElementById('rose-row').style.display='none';
+        document.getElementById('dual-wrap').style.display='none';
+        document.getElementById('empty-state').style.display='';
+      }else drawRose();
+    });
+  });
+  function updateThrOut(){
+    document.getElementById('thr-out').innerHTML=`門檻 = <b>${hotThreshold().toFixed(1)}℃</b>（ASHRAE 0.4% 與 Fallback 上限取較低者）`;
+  }
+  document.getElementById('ashrae-in').addEventListener('input',e=>{
+    const v=parseFloat(e.target.value);
+    ashraeTemp=isNaN(v)?null:v;
+    updateThrOut();
+    if(allRec.length)drawRose();
+  });
+  document.getElementById('fallback-in').addEventListener('input',e=>{
+    const v=parseFloat(e.target.value);
+    fallbackCeil=isNaN(v)?35:v;
+    updateThrOut();
+    if(allRec.length)drawRose();
+  });
+  updateThrOut();
+
+  // ── CWB parser ──────────────────────────────────────────────────
+  function parseCWB(text){
+    const lines=text.split(/\r?\n/);
+    const rec=[];
+    const seen=new Set(); // ponytail: same timestamp pasted twice (overlapping selection) shouldn't double-count
+    let cur=null;
+    for(const line of lines){
+      const dm=line.match(/時間[：:]\s*(\d{4})年(\d{1,2})月(\d{1,2})日/);
+      if(dm){cur={year:+dm[1],month:+dm[2],day:+dm[3]};continue;}
+      const f=line.split('\t');
+      const hr=parseInt(f[0]);
+      if(isNaN(hr)||hr<1||hr>24||f.length<6)continue;
+      const pres=parseFloat(f[1]);
+      if(isNaN(pres)||pres<800||pres>1100)continue;
+      // CWB layout: Hour,Pressure,Temperature,Relative Humidity,Mean Wind Speed,Mean Wind Direction,Precipitation
+      const temp=parseFloat(f[2]);
+      const rh=parseFloat(f[3]);
+      const spd=parseFloat(f[4]);
+      const ds=(f[5]||'').replace(/[\s\-&]+$/,'').trim();
+      const dir=parseFloat(ds);
+      if(isNaN(spd))continue;
+      const key=cur?`${cur.year}-${cur.month}-${cur.day}-${hr}`:null;
+      if(key){if(seen.has(key))continue;seen.add(key);}
+      rec.push({...cur,hour:hr,speed:spd,dir:isNaN(dir)?null:dir,temp:isNaN(temp)?null:temp,rh:isNaN(rh)?null:rh});
+    }
+    return rec;
+  }
+
+  function parseGeneric(text){
+    const lines=text.trim().split(/\r?\n/).filter(l=>l.trim());
+    if(lines.length<2)return[];
+    const dl=lines[0].includes('\t')?'\t':',';
+    const h=lines[0].split(dl).map(x=>x.trim().toLowerCase());
+    const di=h.findIndex(x=>/dir|wd|wind.?dir|方向|風向/.test(x));
+    const si=h.findIndex(x=>/sp[de]|ws|wind.?sp|速度|風速/.test(x));
+    if(di<0||si<0)return[];
+    return lines.slice(1).map(l=>{
+      const f=l.split(dl);
+      const ds=(f[di]||'').trim().toUpperCase();
+      const dir=ds in COMPASSDEG?COMPASSDEG[ds]:parseFloat(ds);
+      const speed=parseFloat(f[si]);
+      return{year:null,month:null,day:null,hour:null,speed,dir:isNaN(dir)?null:dir,temp:null,rh:null};
+    }).filter(r=>!isNaN(r.speed));
+  }
+
+  function ingest(text){
+    let r=parseCWB(text);
+    if(!r.length)r=parseGeneric(text);
+    return r;
+  }
+
+  function loadRec(rec){
+    allRec=rec;
+    const st=document.getElementById('import-status');
+    st.className='st';
+    st.textContent=`共 ${rec.length.toLocaleString()} 筆有效資料`;
+    document.getElementById('clear-btn').disabled=false;
+    drawRose();
+  }
+
+  // ── Compute bins ────────────────────────────────────────────────
+  function computeBins(){
+    // Grid mode: use gridData directly (percentages, not raw records — no temp available)
+    const tots=gridData.map(r=>r.reduce((a,b)=>a+b,0));
+    const calm=gridCalm||0;
+    const total=tots.reduce((a,b)=>a+b,0)+calm;
+    const pd=DLBL[tots.indexOf(Math.max(...tots))];
+    return{bins:gridData.map(r=>[...r]),calm,total,avg:0,pd};
+  }
+
+  // Generalized raw-record binning, reused for All Hours + Hot Hours (and E1–E5 stats,
+  // which need the underlying records per direction, not just counts).
+  function binRecords(records){
+    const sz=360/N;
+    const bins=Array.from({length:N},()=>new Array(BANDS.length).fill(0));
+    const recsByDir=Array.from({length:N},()=>[]);
+    let calm=0,total=0;
+    for(const r of records){
+      if(isNaN(r.speed)||r.dir===null)continue;
+      total++;
+      if(r.speed<=CALM){calm++;continue;}
+      const bi=Math.floor(((r.dir+360+sz/2)%360)/sz)%N;
+      const si=BANDS.findIndex(b=>r.speed<b.max);
+      if(si>=0){bins[bi][si]++;recsByDir[bi].push(r);}
+    }
+    const speeds=records.filter(r=>!isNaN(r.speed)).map(r=>r.speed);
+    const avg=speeds.length?speeds.reduce((a,b)=>a+b,0)/speeds.length:0;
+    const tots=bins.map(b=>b.reduce((s,c)=>s+c,0));
+    const maxTot=Math.max(...tots,0);
+    const pdIdx=maxTot>0?tots.indexOf(maxTot):-1;
+    return{bins,recsByDir,calm,total,avg,pd:pdIdx>=0?DLBL[pdIdx]:'—',pdIdx,tots};
+  }
+
+  function median(arr){
+    if(!arr.length)return null;
+    const s=[...arr].sort((a,b)=>a-b),m=s.length>>1;
+    return s.length%2?s[m]:(s[m-1]+s[m])/2;
+  }
+  function percentile(arr,p){
+    if(!arr.length)return null;
+    const s=[...arr].sort((a,b)=>a-b),idx=(s.length-1)*p;
+    const lo=Math.floor(idx),hi=Math.ceil(idx);
+    return lo===hi?s[lo]:s[lo]+(s[hi]-s[lo])*(idx-lo);
+  }
+  // Stull (2011) single-formula wet-bulb approximation from dry-bulb °C + RH % — no psychrometric
+  // library needed, valid roughly -20–50°C / 5–99% RH, plenty for this use.
+  function wetBulbApprox(t,rh){
+    if(t==null||rh==null||isNaN(t)||isNaN(rh))return null;
+    return t*Math.atan(0.151977*Math.sqrt(rh+8.313659))+Math.atan(t+rh)
+      -Math.atan(rh-1.676331)+0.00391838*Math.pow(rh,1.5)*Math.atan(0.023101*rh)-4.686035;
+  }
+
+  function updateStats(calm,total,avg,pd){
+    const el=document.getElementById('stat-grid');
+    if(!total){el.innerHTML='<div class="sc full" style="color:var(--muted);font-size:.78rem;text-align:center;background:none">無符合條件的資料</div>';return;}
+    el.innerHTML=`
+      <div class="sc"><div class="v">${gridData?total.toFixed(2)+'%':total.toLocaleString()}</div><div class="l">${gridData?'網格總和':'有效筆數'}</div></div>
+      <div class="sc"><div class="v">${avg?avg.toFixed(2):'—'}</div><div class="l">平均風速 (m/s)</div></div>
+      <div class="sc"><div class="v">${pd}</div><div class="l">最常見風向</div></div>
+      <div class="sc"><div class="v">${total?((calm/total*100).toFixed(1)+'%'):'—'}</div><div class="l">靜風率</div></div>`;
+  }
+
+  function drawArc(ctx,cx,cy,r0,r1,a0,a1,col){
+    ctx.beginPath();
+    if(r0<0.5){ctx.moveTo(cx,cy);ctx.arc(cx,cy,r1,a0,a1);}
+    else{ctx.arc(cx,cy,r1,a0,a1);ctx.arc(cx,cy,r0,a1,a0,true);}
+    ctx.closePath();ctx.fillStyle=col;ctx.fill();
+  }
+
+  // Paints one wind rose into a given canvas. bins are percentages when gridData is active,
+  // raw counts otherwise (matches the original single-rose behaviour, now shared by 1–2 roses).
+  // A blank "Calm" disc of radius R0 sits at the centre and every direction's stack starts at
+  // R0 (not 0) — at true centre a polar wedge's width collapses to a point no matter how big
+  // its value is, so small bands were invisible; starting from R0 guarantees a visible minimum
+  // width for every band, and gives Calm a real circle instead of overlapping text.
+  function paintRoseCanvas(canvas,bins,calm,total,sizeBudget){
+    const dpr=window.devicePixelRatio||1,sz=Math.max(160,sizeBudget);
+    canvas.width=canvas.height=sz*dpr;
+    canvas.style.width=canvas.style.height=sz+'px';
+    const ctx=canvas.getContext('2d');
+    ctx.scale(dpr,dpr);
+    const cx=sz/2,cy=sz/2,R=sz/2-54;
+    const R0=Math.max(26,R*0.16);
+    ctx.clearRect(0,0,sz,sz);ctx.fillStyle='#fff';ctx.fillRect(0,0,sz,sz);
+    if(!total){
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='12px system-ui';ctx.fillStyle='#b0bfcf';
+      ctx.fillText('無符合門檻的資料',cx,cy);
+      return;
+    }
+    const tots=bins.map(b=>b.reduce((s,c)=>s+c,0));
+    const rawMaxPct=gridData?Math.max(...tots,0):Math.max(...tots,0)/total*100;
+    const maxP=niceMax(rawMaxPct);
+    const maxC=gridData?maxP:maxP/100*total;
+    for(let i=1;i<=4;i++){
+      const r=R0+(R-R0)*i/4;
+      ctx.beginPath();ctx.arc(cx,cy,r,0,2*Math.PI);
+      ctx.strokeStyle='#dce8f0';ctx.lineWidth=1;ctx.stroke();
+      ctx.fillStyle='#9aaec0';ctx.font='9px system-ui';
+      ctx.textAlign='left';ctx.textBaseline='bottom';
+      ctx.fillText((maxP*i/4).toFixed(1)+'%',cx+3,cy-r-1);
+    }
+    for(let b=0;b<N;b++){
+      const a=(b*360/N-90)*Math.PI/180;
+      ctx.beginPath();ctx.moveTo(cx+R0*Math.cos(a),cy+R0*Math.sin(a));ctx.lineTo(cx+R*Math.cos(a),cy+R*Math.sin(a));
+      ctx.strokeStyle='#dce8f0';ctx.lineWidth=.5;ctx.stroke();
+    }
+    const gap=Math.PI/N*0.05;
+    for(let b=0;b<N;b++){
+      const mid=(b*360/N-90)*Math.PI/180;
+      const a0=mid-Math.PI/N+gap,a1=mid+Math.PI/N-gap;
+      let prev=0;
+      for(let s=0;s<BANDS.length;s++){
+        const cnt=bins[b][s];
+        if(cnt>0)drawArc(ctx,cx,cy,R0+prev/maxC*(R-R0),R0+(prev+cnt)/maxC*(R-R0),a0,a1,BANDS[s].color);
+        prev+=cnt;
+      }
+    }
+    const lr=R+20;
+    for(let b=0;b<N;b++){
+      const a=(b*360/N-90)*Math.PI/180,lbl=DLBL[b],card=N===8||b%4===0;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillStyle=card?'#1a2332':'#4a5a6a';
+      ctx.font=(card?'bold 13px':'11px')+' system-ui';
+      ctx.fillText(lbl,cx+lr*Math.cos(a),cy+lr*Math.sin(a));
+    }
+    // blank white Calm disc, drawn last so it sits cleanly over the spokes/wedge tips that meet it
+    ctx.beginPath();ctx.arc(cx,cy,R0,0,2*Math.PI);ctx.fillStyle='#fff';ctx.fill();
+    ctx.lineWidth=1;ctx.strokeStyle='#dce8f0';ctx.stroke();
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.font='bold 10px system-ui';ctx.fillStyle='#4a5a6a';ctx.fillText('Calm',cx,cy-7);
+    ctx.font='10px system-ui';ctx.fillStyle='#9aaec0';ctx.fillText((calm/total*100).toFixed(1)+'%',cx,cy+7);
+    ctx.textAlign='right';ctx.textBaseline='top';ctx.font='9px system-ui';ctx.fillStyle='#b8c8d8';
+    ctx.fillText(gridData?('total = '+total.toFixed(2)+'%'):('n = '+total.toLocaleString()),sz-6,6);
+  }
+
+  function paintLegend(elId){
+    document.getElementById(elId).innerHTML=
+      BANDS.map((b,i)=>i).reverse().map(i=>`<div class="li"><div class="ls" style="background:${BANDS[i].color}"></div>${bandLabel(i)}</div>`).join('')+
+      (gridData?`<div class="li"><div class="ls" style="background:#e0eaf2;border-color:#ccd8e4"></div>Calm (manual %)</div>`
+        :`<div class="li"><div class="ls" style="background:#e0eaf2;border-color:#ccd8e4"></div>Calm ≤${CALM} m/s</div>`);
+  }
+
+  function paintDirTable(elId,bins,calm,total){
+    const rows=DLBL.map((lbl,d)=>{
+      const cnt=bins[d].reduce((a,b)=>a+b,0);
+      return `<tr><td>${lbl}</td><td>${total?(cnt/total*100).toFixed(1):'0.0'}%</td></tr>`;
+    }).join('');
+    document.getElementById(elId).innerHTML=`
+      <table class="dir-tbl">
+        <thead>
+          <tr><th>Wind Direction</th><th>Freq.</th></tr>
+        </thead>
+        <tbody>
+          <tr class="calm-row"><td>Calm</td><td>${total?(calm/total*100).toFixed(1):'0.0'}%</td></tr>
+          ${rows}
+        </tbody>
+      </table>`;
+  }
+
+  // ── Top-level draw dispatcher ─────────────────────────────────────
+  function drawRose(){
+    const roseWrap=document.getElementById('rose-wrap');
+    if(!allRec.length&&!gridData){
+      document.getElementById('rose-row').style.display='none';
+      document.getElementById('dual-wrap').style.display='none';
+      document.getElementById('epanel').style.display='none';
+      roseWrap.classList.remove('scrollable');
+      document.getElementById('empty-state').style.display='';
+      return;
+    }
+    if(gridData)drawSingleGridRose();else drawDualRoses();
+  }
+
+  // Manual-grid mode: one rose, percentages typed by hand — no temperature, so Hot Hours /
+  // CFD scenario table don't apply here.
+  function drawSingleGridRose(){
+    document.getElementById('dual-wrap').style.display='none';
+    document.getElementById('epanel').style.display='none';
+    document.getElementById('rose-wrap').classList.remove('scrollable');
+    const{bins,calm,total,avg,pd}=computeBins();
+    updateStats(calm,total,avg,pd);
+    if(!total){
+      document.getElementById('rose-row').style.display='none';
+      document.getElementById('empty-state').style.display='';
+      return;
+    }
+    const rw=document.getElementById('rose-wrap');
+    const sizeBudget=Math.min(rw.clientWidth-280,rw.clientHeight-80,480);
+    paintRoseCanvas(document.getElementById('rose'),bins,calm,total,sizeBudget);
+    document.getElementById('empty-state').style.display='none';
+    document.getElementById('rose-row').style.display='';
+    paintLegend('legend');
+    paintDirTable('dir-table-wrap',bins,calm,total);
+  }
+
+  // Raw hourly data mode: REV04 requires two wind roses (All Hours + Hot Hours) plus the
+  // Table-2 CFD scenario values, all derived straight from the imported records.
+  function drawDualRoses(){
+    document.getElementById('rose-row').style.display='none';
+    const base=allRec.filter(r=>r.month==null||selM.has(r.month));
+    const allB=binRecords(base);
+    updateStats(allB.calm,allB.total,allB.avg,allB.pd);
+    if(!allB.total){
+      document.getElementById('dual-wrap').style.display='none';
+      document.getElementById('epanel').style.display='none';
+      document.getElementById('rose-wrap').classList.remove('scrollable');
+      document.getElementById('empty-state').style.display='';
+      return;
+    }
+    document.getElementById('empty-state').style.display='none';
+    document.getElementById('dual-wrap').style.display='';
+    document.getElementById('rose-wrap').classList.add('scrollable');
+
+    const thr=hotThreshold();
+    const hotBase=base.filter(r=>r.temp!=null&&r.temp>thr);
+    const hotB=binRecords(hotBase);
+
+    const rw=document.getElementById('rose-wrap');
+    const sizeBudget=Math.max(200,Math.min((rw.clientWidth-540)/2,380,rw.clientHeight-180));
+
+    paintRoseCanvas(document.getElementById('rose-all'),allB.bins,allB.calm,allB.total,sizeBudget);
+    paintLegend('legend-all');
+    paintDirTable('dir-table-all',allB.bins,allB.calm,allB.total);
+
+    paintRoseCanvas(document.getElementById('rose-hot'),hotB.bins,hotB.calm,hotB.total,sizeBudget);
+    paintLegend('legend-hot');
+    paintDirTable('dir-table-hot',hotB.bins,hotB.calm,hotB.total);
+
+    const hasTemp=base.some(r=>r.temp!=null);
+    document.getElementById('hh-pct').textContent=hasTemp
+      ?`門檻>${thr.toFixed(1)}℃ · ${(base.length?hotBase.length/base.length*100:0).toFixed(1)}% of hours`
+      :'資料無溫度欄位';
+
+    const years=[...new Set(allRec.map(r=>r.year).filter(Boolean))];
+    const note=document.getElementById('rev04-note');
+    if(years.length){
+      const span=Math.max(...years)-Math.min(...years)+1;
+      if(span<20){
+        note.className='rev-note warn';
+        note.textContent=`⚠ 資料涵蓋 ${Math.min(...years)}–${Math.max(...years)}（約 ${span} 年），REV04 要求最少 20 年歷史資料，尚缺約 ${20-span} 年`;
+      }else{
+        note.className='rev-note';
+        note.textContent=`資料涵蓋 ${Math.min(...years)}–${Math.max(...years)}（約 ${span} 年），符合 REV04 20 年最低要求`;
+      }
+    }else note.textContent='';
+
+    document.getElementById('epanel').style.display=hasTemp?'':'none';
+    if(hasTemp)buildScenarioTable(base,allB,hotBase,hotB);
+  }
+
+  // ── Table-2 CFD scenarios (REV04 External-Scenario, E1–E5) ───────
+  // rank 0 = prevailing direction, rank 1 = 2nd prevailing, by hour-count within binResult
+  function nthPrevailing(binResult,rank){
+    const order=binResult.tots.map((t,i)=>[t,i]).filter(([t])=>t>0).sort((a,b)=>b[0]-a[0]);
+    if(order.length<=rank)return null;
+    const dirIdx=order[rank][1];
+    return{dirIdx,recs:binResult.recsByDir[dirIdx]};
+  }
+  function hottestWetBulb(recs){
+    let wet=null,dry=null,ws=null;
+    for(const r of recs){
+      const wb=wetBulbApprox(r.temp,r.rh);
+      if(wb!=null&&(wet==null||wb>wet)){wet=wb;dry=r.temp;ws=r.speed;}
+    }
+    return wet==null?null:{wet,dry,ws};
+  }
+
+  function buildScenarioTable(allBase,allB,hotBase,hotB){
+    const fmt=(v,d=1)=>v==null?'<span class="na">no data</span>':v.toFixed(d);
+    const rows=[];
+
+    // E1 — dry-bulb: highest recorded temp anywhere in the (month-filtered) dataset. WD/WS N/A.
+    const tempsAll=allBase.map(r=>r.temp).filter(v=>v!=null);
+    const e1Temp=tempsAll.length?Math.max(...tempsAll):null;
+    rows.push(['E1','N/A','N/A',fmt(e1Temp)]);
+    const e1w=hottestWetBulb(allBase);
+    if(e1w)rows.push(['','wet-bulb variant',fmt(e1w.ws)+' m/s',`Tw ${fmt(e1w.wet)} / Tdb(coincidental) ${fmt(e1w.dry)}`,'wetrow']);
+
+    // E2 — prevailing WD from the Hot Hours Wind Rose; median WS + max temp within that WD & hot hours.
+    const p2=nthPrevailing(hotB,0);
+    if(p2){
+      const speeds=p2.recs.map(r=>r.speed), temps=p2.recs.map(r=>r.temp).filter(v=>v!=null);
+      rows.push(['E2',`${DLBL[p2.dirIdx]} <small>(Hot Hours prevailing)</small>`,fmt(median(speeds))+' m/s (median)',fmt(temps.length?Math.max(...temps):null)]);
+      const w=hottestWetBulb(p2.recs);
+      if(w)rows.push(['','wet-bulb variant',fmt(w.ws)+' m/s',`Tw ${fmt(w.wet)} / Tdb(coincidental) ${fmt(w.dry)}`,'wetrow']);
+    }else rows.push(['E2','no data','no data','no data']);
+
+    // E3 — 2nd prevailing WD from the Hot Hours Wind Rose (same stats, no wet-bulb duplicate required).
+    const p3=nthPrevailing(hotB,1);
+    if(p3){
+      const speeds=p3.recs.map(r=>r.speed), temps=p3.recs.map(r=>r.temp).filter(v=>v!=null);
+      rows.push(['E3',`${DLBL[p3.dirIdx]} <small>(2nd prevailing)</small>`,fmt(median(speeds))+' m/s (median)',fmt(temps.length?Math.max(...temps):null)]);
+    }else rows.push(['E3','no data','no data','no data']);
+
+    // E4 — prevailing WD from the All Hours Wind Rose; 95th percentile WS & temp within that WD.
+    const p4=nthPrevailing(allB,0);
+    if(p4){
+      const speeds=p4.recs.map(r=>r.speed), temps=p4.recs.map(r=>r.temp).filter(v=>v!=null);
+      rows.push(['E4',`${DLBL[p4.dirIdx]} <small>(All Hours prevailing)</small>`,fmt(percentile(speeds,0.95))+' m/s (95th pct)',fmt(percentile(temps,0.95))]);
+    }else rows.push(['E4','no data','no data','no data']);
+
+    // E5 — "discretion of CRE": user picks the direction, same 95th-percentile stats as E4.
+    const e5recs=(allB.recsByDir[e5DirIdx]||[]);
+    const e5speeds=e5recs.map(r=>r.speed), e5temps=e5recs.map(r=>r.temp).filter(v=>v!=null);
+    const dirOptions=DLBL.map((l,i)=>`<option value="${i}" ${i===e5DirIdx?'selected':''}>${l}</option>`).join('');
+    rows.push(['E5',`<select id="e5-sel">${dirOptions}</select> <small>(discretion of CRE)</small>`,
+      fmt(percentile(e5speeds,0.95))+' m/s (95th pct)',fmt(percentile(e5temps,0.95))]);
+
+    document.getElementById('etbl').innerHTML=
+      `<thead><tr><th>Case</th><th>Wind Direction</th><th>Wind Speed</th><th>Dry Bulb Temp (℃)</th></tr></thead>`+
+      `<tbody>${rows.map(r=>`<tr class="${r[4]||''}"><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</tbody>`;
+
+    document.getElementById('e5-sel').addEventListener('change',e=>{
+      e5DirIdx=+e.target.value;
+      buildScenarioTable(allBase,allB,hotBase,hotB);
+    });
+  }
+
+  // ── Import events ───────────────────────────────────────────────
+  const pa=document.getElementById('paste-area');
+  pa.addEventListener('paste',()=>{
+    setTimeout(()=>{
+      const v=pa.value.trim();if(!v)return;
+      const r=ingest(v);
+      if(!r.length){document.getElementById('import-status').textContent='無法辨識格式';document.getElementById('import-status').className='st err';return;}
+      loadRec(r);
+    },10);
+  });
+
+  document.getElementById('file-in').addEventListener('change',e=>{
+    const f=e.target.files[0];if(!f)return;
+    const isXL=/\.(xlsx|xls)$/i.test(f.name);
+    const rd=new FileReader();
+    rd.onload=ev=>{
+      let r;
+      if(isXL){
+        const wb=XLSX.read(ev.target.result,{type:'array'});
+        r=parseXLSX(wb);
+      }else{
+        r=ingest(ev.target.result);
+      }
+      if(!r.length){document.getElementById('import-status').textContent='無法辨識格式';document.getElementById('import-status').className='st err';return;}
+      loadRec(r);
+    };
+    if(isXL)rd.readAsArrayBuffer(f);else rd.readAsText(f,'UTF-8');
+  });
+
+  function parseXLSX(wb){
+    const recs=[];
+    // ponytail: CWB workbooks commonly ship both a per-year sheet AND an "all years merged" sheet
+    // covering the same hours (this file's combined sheet duplicates all 11 yearly ones 1:1, which
+    // silently doubled every total/percentage). Dedupe by exact timestamp across every sheet so the
+    // key wind-rose data (counts per direction/speed bin) is captured once, correctly.
+    const seenHours=new Set();
+    for(const sheetName of wb.SheetNames){
+      const ws=wb.Sheets[sheetName];
+      const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+      if(!aoa.length)continue;
+
+      // Find header row (first row with matching WD/WS columns)
+      let hRow=-1,di=-1,si=-1;
+      for(let i=0;i<Math.min(30,aoa.length);i++){
+        const h=aoa[i].map(c=>String(c||'').trim().toLowerCase());
+        const d=h.findIndex(x=>/dir|wd|wind.?dir|wind direction|方向|風向/.test(x));
+        const s=h.findIndex(x=>/sp[de]|ws|wind.?sp|wind speed|速度|風速/.test(x));
+        if(d>=0&&s>=0){hRow=i;di=d;si=s;break;}
+      }
+      if(hRow<0)continue;
+
+      // Detect CWB Excel format: look for 時間: pattern in rows below header
+      let isCWB=false;
+      for(let i=hRow+1;i<Math.min(hRow+50,aoa.length);i++){
+        if(String(aoa[i][0]||'').match(/時間[：:]/)){isCWB=true;break;}
+      }
+
+      if(isCWB){
+        // CWB layout ties Temperature/RH two columns before Speed: Hour,Pressure,Temp,RH,Speed,Dir,Precip
+        const ti=si-2, hi=si-1;
+        let cur={year:null,month:null,day:null};
+        for(let i=1;i<aoa.length;i++){
+          const row=aoa[i];
+          const cellA=String(row[0]||'').trim();
+          const dm=cellA.match(/時間[：:]\s*(\d{4})年(\d{1,2})月(\d{1,2})日/);
+          if(dm){cur={year:+dm[1],month:+dm[2],day:+dm[3]};continue;}
+          const hr=parseInt(row[0]);
+          if(isNaN(hr)||hr<1||hr>24)continue;
+          const speed=parseFloat(row[si]);
+          const dv=row[di];
+          const dir=typeof dv==='number'?dv:parseFloat(String(dv||'').replace(/[^\d.]/g,''));
+          if(isNaN(speed))continue;
+          const temp=ti>=0?parseFloat(row[ti]):NaN;
+          const rh=hi>=0?parseFloat(row[hi]):NaN;
+          const key=cur.year&&cur.month&&cur.day?`${cur.year}-${cur.month}-${cur.day}-${hr}`:null;
+          if(key){if(seenHours.has(key))continue;seenHours.add(key);}
+          recs.push({...cur,hour:hr,speed,dir:isNaN(dir)?null:dir,temp:isNaN(temp)?null:temp,rh:isNaN(rh)?null:rh});
+        }
+      }else{
+        for(let i=hRow+1;i<aoa.length;i++){
+          const row=aoa[i];
+          const speed=parseFloat(row[si]);
+          const dv=row[di];
+          const dir=typeof dv==='number'?dv:parseFloat(String(dv||'').replace(/[^\d.]/g,''));
+          if(!isNaN(speed))recs.push({year:null,month:null,day:null,hour:null,speed,dir:isNaN(dir)?null:dir,temp:null,rh:null});
+        }
+      }
+    }
+    return recs;
+  }
+
+  document.getElementById('demo-btn').addEventListener('click',()=>{
+    const rng=Math.random,randn=()=>{let u=0,v=0;while(!u)u=rng();while(!v)v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+    const rec=[];
+    for(let yr=2020;yr<=2022;yr++){
+      for(let mo=1;mo<=12;mo++){
+        const days=new Date(yr,mo,0).getDate();
+        for(let dy=1;dy<=days;dy++){
+          for(let hr=1;hr<=24;hr++){
+            let dir,spd;
+            if(mo>=10||mo<=3){dir=45+randn()*25;spd=Math.abs(randn()*2.5+4);}
+            else if(mo>=6&&mo<=9){dir=225+randn()*30;spd=Math.abs(randn()*1.5+2.5);}
+            else{dir=rng()*360;spd=Math.abs(randn()*2+2);}
+            // synthetic seasonal temperature + RH so the Hot Hours / CFD demo has something to filter on
+            const seasonal=25+9*Math.sin((mo-4)/12*2*Math.PI)+3*Math.sin((hr-15)/24*2*Math.PI);
+            const temp=+(seasonal+randn()*1.5).toFixed(1);
+            const rh=+Math.min(99,Math.max(35,70-(temp-25)*2+randn()*8)).toFixed(0);
+            rec.push({year:yr,month:mo,day:dy,hour:hr,speed:+spd.toFixed(2),dir:+((dir%360+360)%360).toFixed(1),temp,rh});
+          }
+        }
+      }
+    }
+    loadRec(rec);
+    document.getElementById('import-status').textContent=`Demo：${rec.length.toLocaleString()} 筆（2020–2022 模擬）`;
+  });
+
+  document.getElementById('clear-btn').addEventListener('click',()=>{
+    allRec=[];pa.value='';
+    document.getElementById('import-status').textContent='';
+    document.getElementById('clear-btn').disabled=true;
+    if(!gridData){
+      document.getElementById('rose-row').style.display='none';
+      document.getElementById('dual-wrap').style.display='none';
+      document.getElementById('epanel').style.display='none';
+      document.getElementById('rose-wrap').classList.remove('scrollable');
+      document.getElementById('empty-state').style.display='';
+      document.getElementById('stat-grid').innerHTML='<div class="sc full" style="color:var(--muted);font-size:.78rem;text-align:center;background:none">尚未載入資料</div>';
+    }else drawRose();
+  });
+
+  function downloadCanvas(canvasId,filename){
+    const a=document.createElement('a');
+    a.download=filename;
+    a.href=document.getElementById(canvasId).toDataURL('image/png');
+    a.click();
+  }
+  document.getElementById('dl-btn').addEventListener('click',()=>downloadCanvas('rose','coreinfra_windrose.png'));
+  document.getElementById('dl-all-btn').addEventListener('click',()=>downloadCanvas('rose-all','coreinfra_windrose_allhours.png'));
+  document.getElementById('dl-hot-btn').addEventListener('click',()=>downloadCanvas('rose-hot','coreinfra_windrose_hothours.png'));
+
+  document.getElementById('epanel-hd').addEventListener('click',()=>{
+    document.getElementById('epanel-hd').classList.toggle('open');
+    document.getElementById('epanel-bd').classList.toggle('open');
+  });
+
+  window.addEventListener('resize',()=>{if(allRec.length||gridData)drawRose();});
 })();
 </script>
 </body>
